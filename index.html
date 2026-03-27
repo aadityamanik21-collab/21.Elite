@@ -6960,33 +6960,27 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
                 location.reload();
             },    
 
-            factoryReset: async () => {
-                if(!confirm('Delete EVERYTHING? This cannot be undone.')) return;
-                
-                app.data = []; app.files = []; app.programs = []; app.trash = [];
-                journal.data = {}; journal.customMarkers = [];
-                
-                await idb.set('zenith_minimal_v1', []);
-                await idb.set('zenith_files', []);
-                await idb.set('zenith_programs', []);
-                await idb.set('zenith_journal', {});
-                await idb.set('zenith_custom_markers', []);
-                await idb.set('zenith_trash', []);
-                
-                localStorage.clear();
-                localStorage.setItem('zenith_v7_final', 'true'); 
+        factoryReset: async () => {
+            if(!confirm('Delete EVERYTHING? This cannot be undone.')) return;
+            app.data = []; app.files = []; app.programs = []; app.trash = []; journal.data = {}; journal.customMarkers = [];
+            
+            await idb.set('zenith_minimal_v1', []);
+            await idb.set('zenith_files', []);
+            await idb.set('zenith_programs', []);
+            await idb.set('zenith_journal', {});
+            await idb.set('zenith_custom_markers', []);
+            await idb.set('zenith_trash', []);
+            
+            localStorage.clear();
+            localStorage.setItem('zenith_v7_final', 'true');
+            localStorage.setItem('zenith_tour_done', 'true'); // Bypass tour logic
+            
+            if(typeof idb !== 'undefined' && idb.db) { try { idb.db.close(); } catch(e){} }
+            
+            // CRITICAL FIX: Reload to ensure clean slate and prevent freeze
+            location.reload(); 
+        },
 
-                if(typeof idb !== 'undefined' && idb.db) {
-                    try { idb.db.close(); } catch(e){}
-                }
-                try {
-                    const req = indexedDB.deleteDatabase('ZenithCoreDB');
-                    req.onsuccess = () => location.reload();
-                    req.onerror = () => location.reload();
-                    req.onblocked = () => location.reload();
-                } catch(e) { location.reload(); }
-                setTimeout(() => location.reload(), 500);
-            },
 
             // --- REPORT GENERATION (UPDATED WITH RANGES & LOGS) ---
             calculateDateRanges: (dates) => {
@@ -8594,7 +8588,8 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
                 // 4. INSTANT TRANSITION - GUARANTEED UNLOCK
                 if (splash) { 
                     splash.classList.add('hidden-splash'); 
-                    setTimeout(() => splash.remove(), 400); 
+                    // Safely check if splash still exists before trying to remove it
+                    setTimeout(() => { if (splash && splash.parentNode) splash.remove(); }, 400); 
                 }
                 
                 coreSystem.init();
