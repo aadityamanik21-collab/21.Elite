@@ -4431,69 +4431,84 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     }
                 }
             },
-                                                createItemEl: (i) => {
-                const subCount = app.data.filter(x => x.parentId === i.id && x.type !== 'event' && !x.completed && !x.failed).length;
-                const isVisible = i.showInCal !== false; 
-                const isFailed = i.failed === true;
-                
-                let isStagnant = false;
-                if(i.start && !i.completed && !i.failed) {
-                    const daysOld = Math.floor((new Date(app.getLocalISO()) - new Date(i.start)) / (1000 * 60 * 60 * 24));
-                    if(daysOld > 2) isStagnant = true;
-                }
+                                                    createItemEl: (i) => {
+        const subCount = app.data.filter(x => x.parentId === i.id && x.type !== 'event' && !x.completed && !x.failed).length;
+        const isVisible = i.showInCal !== false;
+        const isFailed = i.failed === true;
+        let isStagnant = false;
 
-                const el = document.createElement('div');
-                // UPDATE: Changed to flex-col to allow stacking the button toolbar
-                el.className = `glass p-4 card mb-3 relative overflow-hidden flex flex-col tap-scale draggable-item ${isStagnant ? 'task-stagnant' : ''}`;
-                el.setAttribute('draggable', 'true'); el.setAttribute('data-id', i.id);
-                el.addEventListener('dragstart', app.handleDragStart); el.addEventListener('dragover', app.handleDragOver); el.addEventListener('dragenter', app.handleDragEnter); el.addEventListener('dragleave', app.handleDragLeave); el.addEventListener('drop', app.handleDrop); el.addEventListener('dragend', app.handleDragEnd);
-                
-                let systemHtml = '';
-                if (!i.completed && !isFailed && (i.identity || i.trigger || i.minAction || i.safetyNet)) {
-                    systemHtml = `
-                    <div class="mt-2 p-2 bg-slate-800 rounded border border-slate-700 text-[9px] font-mono leading-tight shadow-inner space-y-1.5">
-                        ${i.identity ? `<div class="text-indigo-400"><span class="font-bold text-slate-300">1. IDENTITY:</span> ${i.identity}</div>` : ''}
-                        ${i.trigger ? `<div class="text-sky-400"><span class="font-bold text-slate-300">2. TRIGGER:</span> ${i.trigger}</div>` : ''}
-                        ${i.minAction ? `<div class="text-emerald-400"><span class="font-bold text-slate-300">3. MIN. ACTION:</span> ${i.minAction}</div>` : ''}
-                        ${i.safetyNet ? `<div class="text-amber-400"><span class="font-bold text-slate-300">4. SAFETY NET:</span> ${i.safetyNet}</div>` : ''}
-                    </div>`;
-                }
+        if(i.start && !i.completed && !i.failed) {
+            const daysOld = Math.floor((new Date(app.getLocalISO()) - new Date(i.start)) / (1000 * 60 * 60 * 24));
+            if(daysOld > 2) isStagnant = true;
+        }
 
-                // UPDATE: Split into two sections (Top Info + Bottom Button Dock)
-                el.innerHTML = `
-                    <div class="flex items-start gap-3 w-full">
-                        <div onclick="app.toggle('${i.id}')" class="w-6 h-6 rounded-full border-2 ${i.completed?'bg-green-500 border-green-500 text-white':isFailed?'border-red-300 bg-red-50':'border-slate-300'} flex items-center justify-center cursor-pointer z-10 no-drag shrink-0 mt-0.5">
-                            ${i.completed?'<i class="fas fa-check text-[10px]"></i>':isFailed?'<i class="fas fa-times text-[10px] text-red-500"></i>':''}
-                        </div>
-                        <div class="flex-1 cursor-pointer overflow-hidden" onclick="app.drill('${i.id}')">
-                            <div class="flex items-center mb-1 gap-2 flex-wrap">
-                                <span class="text-[9px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase">${i.type}</span>
-                                <span class="text-[10px] font-bold ${i.priority==='High'?'text-red-500':i.priority==='Medium'?'text-amber-500':'text-blue-500'} uppercase">${i.priority}</span>
-                                ${subCount > 0 ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100"><i class="fas fa-code-branch mr-1"></i>${subCount}</span>` : ''}
-                            </div>
-                            <h3 class="font-bold text-slate-800 ${i.completed?'line-through text-slate-400':isFailed?'line-through text-red-400':''}">${escapeHTML(i.title)}</h3>
-                            <div class="text-xs text-slate-400 mt-1">${i.deadline}</div>
-                            ${systemHtml}
-                            ${isStagnant ? `<div class="text-[9px] font-bold text-orange-600 mt-2 bg-orange-100 p-1 rounded border border-orange-200 uppercase tracking-wide inline-block"><i class="fas fa-hourglass-half mr-1"></i> Stagnant</div>` : ''}
-                            ${isFailed ? `<div class="text-[9px] font-mono font-bold text-red-600 mt-2 bg-red-50 p-1.5 rounded border border-red-200 uppercase tracking-wide inline-block truncate max-w-full">EXCUSE: ${i.failReason || 'None'}</div>` : ''}
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50 z-10 no-drag w-full overflow-x-auto scroller">
-                        <button onclick="app.toggleVisibility('${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 ${isVisible ? 'text-blue-500' : 'text-slate-400'}" title="Toggle Calendar Visibility"><i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'} text-[10px]"></i></button>
-                        <button onclick="app.toggleFail('${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-red-50 ${isFailed ? 'text-red-500' : 'text-slate-400'}" title="Mark as Failed"><i class="fas fa-times-circle text-[10px]"></i></button>
-                        ${!app.currParent ? `<button onclick="app.toggleMainFlowVisibility('${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 ${i.hideFromMainFlow ? 'text-red-500' : 'text-slate-400'}" title="Toggle Main Flow"><i class="fas fa-sitemap text-[10px]"></i></button>` : ''}
-                        ${!app.currParent ? `<button onclick="app.downloadReport(null, '${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 text-slate-400" title="Download Report"><i class="fas fa-file-invoice text-[10px]"></i></button>` : ''}
-                        <button onclick="app.markPartial(event, '${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-orange-50 text-slate-400" title="Give Up (Partial)"><i class="fas fa-sign-out-alt text-[10px]"></i></button>
-                        <button onclick="app.viewFlowchart('${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 text-slate-400" title="Isolated Flowchart"><i class="fas fa-project-diagram text-[10px]"></i></button>
-                        
-                        <div class="flex-1"></div>
-                        
-                        <button onclick="app.openModal('edit','${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 border border-blue-200 dark:border-blue-800 hover:bg-blue-100" title="Edit"><i class="fas fa-pencil-alt text-[10px]"></i></button>
-                        <button onclick="app.delItem('${i.id}')" class="w-7 h-7 flex items-center justify-center shrink-0 rounded bg-red-50 dark:bg-red-900/30 text-red-600 border border-red-200 dark:border-red-800 hover:bg-red-100" title="Delete"><i class="fas fa-trash text-[10px]"></i></button>
-                    </div>`;
-                return el;
-            },
-                        createStampEl: (i) => {
+        const el = document.createElement('div');
+        // UPDATE: Softer padding, rounded 2xl corners, sleek borders
+        el.className = `glass p-4 sm:p-5 card mb-4 relative overflow-hidden flex flex-col tap-scale draggable-item border border-slate-200 dark:border-slate-700/60 shadow-sm rounded-2xl ${isStagnant ? 'task-stagnant' : ''}`;
+        el.setAttribute('draggable', 'true');
+        el.setAttribute('data-id', i.id);
+        el.addEventListener('dragstart', app.handleDragStart);
+        el.addEventListener('dragover', app.handleDragOver);
+        el.addEventListener('dragenter', app.handleDragEnter);
+        el.addEventListener('dragleave', app.handleDragLeave);
+        el.addEventListener('drop', app.handleDrop);
+        el.addEventListener('dragend', app.handleDragEnd);
+
+        let systemHtml = '';
+        if (!i.completed && !isFailed && (i.identity || i.trigger || i.minAction || i.safetyNet)) {
+            // Elegant Bento Style for Intelligence Parameters
+            systemHtml = `
+            <div class="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 text-[10px] font-mono leading-relaxed shadow-sm space-y-2">
+                ${i.identity ? `<div class="text-indigo-600 dark:text-indigo-400 flex items-start gap-2"><span class="font-bold text-slate-400 dark:text-slate-500 shrink-0"><i class="fas fa-fingerprint w-3"></i></span> <span>${i.identity}</span></div>` : ''}
+                ${i.trigger ? `<div class="text-sky-600 dark:text-sky-400 flex items-start gap-2"><span class="font-bold text-slate-400 dark:text-slate-500 shrink-0"><i class="fas fa-bolt w-3"></i></span> <span>${i.trigger}</span></div>` : ''}
+                ${i.minAction ? `<div class="text-emerald-600 dark:text-emerald-400 flex items-start gap-2"><span class="font-bold text-slate-400 dark:text-slate-500 shrink-0"><i class="fas fa-compress-alt w-3"></i></span> <span>${i.minAction}</span></div>` : ''}
+                ${i.safetyNet ? `<div class="text-amber-600 dark:text-amber-400 flex items-start gap-2"><span class="font-bold text-slate-400 dark:text-slate-500 shrink-0"><i class="fas fa-life-ring w-3"></i></span> <span>${i.safetyNet}</span></div>` : ''}
+            </div>`;
+        }
+
+        // UPDATE: Premium Typography, Rounded Checkbox, Refined Button Dock
+        el.innerHTML = `
+        <div class="flex items-start gap-4 w-full">
+            <div onclick="app.toggle('${i.id}')" class="w-6 h-6 rounded-md border-2 ${i.completed?'bg-emerald-500 border-emerald-500 text-white':isFailed?'border-rose-300 bg-rose-50':'border-slate-300 dark:border-slate-600'} flex items-center justify-center cursor-pointer z-10 no-drag shrink-0 mt-1 hover:scale-110 active:scale-95 transition-transform shadow-sm">
+                ${i.completed?'<i class="fas fa-check text-[10px]"></i>':isFailed?'<i class="fas fa-times text-[10px] text-rose-500"></i>':''}
+            </div>
+            
+            <div class="flex-1 cursor-pointer overflow-hidden" onclick="app.drill('${i.id}')">
+                <div class="flex items-center mb-1.5 gap-2 flex-wrap">
+                    <span class="text-[8px] font-black tracking-widest ${i.priority==='High'?'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400':i.priority==='Medium'?'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400':'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'} px-2 py-0.5 rounded-md uppercase">${i.priority}</span>
+                    <span class="text-[8px] font-black tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md uppercase border border-slate-200 dark:border-slate-700">${i.type}</span>
+                    ${subCount > 0 ? `<span class="text-[8px] font-black tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800/50 flex items-center gap-1"><i class="fas fa-code-branch"></i> ${subCount}</span>` : ''}
+                </div>
+                
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight mb-1 ${i.completed?'line-through text-slate-400 dark:text-slate-500':isFailed?'line-through text-rose-400':''}">${escapeHTML(i.title)}</h3>
+                
+                <div class="flex items-center gap-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                    <i class="far fa-calendar text-slate-300 dark:text-slate-600"></i> ${i.deadline}
+                </div>
+                
+                ${systemHtml}
+                
+                ${isStagnant ? `<div class="text-[9px] font-bold text-orange-600 mt-3 bg-orange-50 p-2 rounded-lg border border-orange-200 uppercase tracking-widest flex items-center shadow-sm"><i class="fas fa-fire mr-2 text-orange-500"></i> Stagnant Task</div>` : ''}
+                ${isFailed ? `<div class="text-[9px] font-mono font-bold text-rose-600 mt-3 bg-rose-50 p-2 rounded-lg border border-rose-200 uppercase tracking-wide truncate shadow-sm"><span class="text-rose-400 mr-1">EXCUSE:</span> ${i.failReason || 'None'}</div>` : ''}
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 z-10 no-drag w-full overflow-x-auto scroller">
+            <button onclick="app.toggleVisibility('${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 ${isVisible ? 'text-blue-500' : 'text-slate-400'} transition-colors shadow-sm" title="Toggle Calendar Visibility"><i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'} text-[10px]"></i></button>
+            <button onclick="app.toggleFail('${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 ${isFailed ? 'text-rose-500 border-rose-200' : 'text-slate-400'} transition-colors shadow-sm" title="Mark as Failed"><i class="fas fa-times-circle text-[10px]"></i></button>
+            ${!app.currParent ? `<button onclick="app.toggleMainFlowVisibility('${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${i.hideFromMainFlow ? 'text-rose-500' : 'text-slate-400'} transition-colors shadow-sm" title="Toggle Main Flow"><i class="fas fa-sitemap text-[10px]"></i></button>` : ''}
+            ${!app.currParent ? `<button onclick="app.downloadReport(null, '${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 transition-colors shadow-sm" title="Download Report"><i class="fas fa-file-invoice text-[10px]"></i></button>` : ''}
+            <button onclick="app.markPartial(event, '${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-slate-400 transition-colors shadow-sm" title="Give Up (Partial)"><i class="fas fa-sign-out-alt text-[10px]"></i></button>
+            <button onclick="app.viewFlowchart('${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-400 transition-colors shadow-sm" title="Isolated Flowchart"><i class="fas fa-project-diagram text-[10px]"></i></button>
+            
+            <div class="flex-1"></div>
+            
+            <button onclick="app.openModal('edit','${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 transition-colors shadow-sm" title="Edit"><i class="fas fa-pencil-alt text-[10px]"></i></button>
+            <button onclick="app.delItem('${i.id}')" class="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors shadow-sm" title="Delete"><i class="fas fa-trash text-[10px]"></i></button>
+        </div>`;
+        return el;
+    },
+                      createStampEl: (i) => {
                 const el = document.createElement('div');
                 el.className = "glass p-4 mb-3 relative flex items-center gap-3 stamp-card";
                 
