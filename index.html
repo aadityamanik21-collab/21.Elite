@@ -2273,14 +2273,12 @@ html.dark .boot-status, html.growth-mode .boot-status {
         }
     });
     
-    // --- 0. DOPAMINE ENGINE (RESTORED CLEAN ANIMATIONS) ---
+        // --- 0. DOPAMINE ENGINE (RESTORED CLEAN ANIMATIONS) ---
     const dopamine = {
-        defaults: { origin: { y: 0.7 } },
-
         // Redirects execution commands back to the clean, singular trigger
         execute: (priority) => { dopamine.trigger(); }, 
         
-                                trigger: () => {
+        trigger: () => {
             if (typeof confetti === 'undefined') return;
 
             // THE GACHA ENGINE (PITY TIMER)
@@ -2311,9 +2309,9 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 dopamine.textPop("SOLID.", "linear-gradient(to right, #38bdf8, #0ea5e9)");
             } 
             else if (roll < 92) {
-                // TIER 3: EPIC (12% Drop Rate) - High visual noise.
+                // TIER 3: EPIC (12% Drop Rate) - Clean burst.
                 dryStreak = 0; localStorage.setItem('zenith_dry_streak', dryStreak);
-                dopamine.fireworks();
+                dopamine.epicBurst();
                 dopamine.goldenFlash();
                 try { systemAudio.awaken(); } catch(e) {}
                 dopamine.textPop("OUTSTANDING!", "linear-gradient(to right, #a855f7, #7e22ce)");
@@ -2345,8 +2343,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 document.body.classList.add('glitch-tear');
                 setTimeout(() => document.body.classList.remove('glitch-tear'), 400);
                 
-                dopamine.vortex();
-                dopamine.centerExplosion();
+                dopamine.mythicExplosion();
                 try { systemAudio.playTone(300, 'sawtooth', 1.5, 0.2); } catch(e) {}
                 
                 const el = document.createElement('div');
@@ -2360,128 +2357,52 @@ html.dark .boot-status, html.growth-mode .boot-status {
             }
         },
 
+        // 1. Basic (Clean Confetti)
+        basic: () => confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true }),
 
-        // 1. Basic
-        basic: () => confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }),
-
-        // 2. Random Direction
-        randomDir: () => confetti({ angle: 60 + Math.random() * 60, spread: 55, particleCount: 60, origin: { x: Math.random(), y: 0.6 } }),
-
-        // 3. Fireworks
-        fireworks: () => {
-            let duration = 15 * 100;
-            let animationEnd = Date.now() + duration;
-            let interval = setInterval(function() {
-                let timeLeft = animationEnd - Date.now();
-                if (timeLeft <= 0) return clearInterval(interval);
-                let particleCount = 50 * (timeLeft / duration);
-                confetti(Object.assign({}, { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
-            }, 250);
+        // 2. Epic Burst (Replaces buggy fireworks)
+        epicBurst: () => {
+            const defaults = { origin: { y: 0.6 }, zIndex: 1000, disableForReducedMotion: true };
+            confetti(Object.assign({}, defaults, { particleCount: 100, spread: 80, startVelocity: 40, colors: ['#a855f7', '#38bdf8', '#fbbf24'] }));
+            setTimeout(() => {
+                confetti(Object.assign({}, defaults, { particleCount: 50, spread: 100, startVelocity: 55, colors: ['#ffffff'] }));
+            }, 150);
         },
 
-        // 4. School Pride
-        schoolPride: () => {
-            let end = Date.now() + (1 * 1000);
-            (function frame() {
-                confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#bb0000', '#ffffff'] });
-                confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#bb0000', '#ffffff'] });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
+        // 3. Mythic Explosion (Replaces buggy vortex/centerExplosion)
+        mythicExplosion: () => {
+            const defaults = { origin: { y: 0.6 }, zIndex: 1000, disableForReducedMotion: true };
+            confetti(Object.assign({}, defaults, { particleCount: 150, spread: 120, startVelocity: 60, colors: ['#fbbf24', '#f87171', '#38bdf8', '#a855f7'] }));
+            setTimeout(() => {
+                confetti(Object.assign({}, defaults, { particleCount: 100, spread: 160, startVelocity: 70, decay: 0.9 }));
+            }, 200);
+            setTimeout(() => {
+                confetti(Object.assign({}, defaults, { particleCount: 80, spread: 180, startVelocity: 80, decay: 0.85, colors: ['#ffffff'] }));
+            }, 400);
         },
 
-        // 5. Stars
-        stars: () => {
-            const defaults = { spread: 360, ticks: 50, gravity: 0, decay: 0.94, startVelocity: 30, shapes: ['star'], colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA6C', '#FDFFB8'] };
-            confetti({ ...defaults, particleCount: 40, scalar: 1.2, shapes: ['star'] });
-            confetti({ ...defaults, particleCount: 10, scalar: 0.75, shapes: ['circle'] });
-        },
-
-        // 6. Hearts
-        hearts: () => {
-            confetti({ particleCount: 50, spread: 100, origin: { y: 0.6 }, shapes: ['heart'], colors: ['#FFC0CB', '#FF69B4', '#FF1493', '#C71585'] });
-        },
-
-        // 7. Fire Emojis
-        fire: () => {
-             const scalar = 2;
-             const fire = confetti.shapeFromText({ text: '🔥', scalar });
-             confetti({ particleCount: 30, spread: 100, origin: { y: 0.7 }, shapes: [fire], scalar });
-        },
-
-        // 8. Snow
-        snow: () => {
-            let duration = 3 * 1000;
-            let animationEnd = Date.now() + duration;
-            let skew = 1;
-            (function frame() {
-                let timeLeft = animationEnd - Date.now();
-                let ticks = Math.max(200, 500 * (timeLeft / duration));
-                skew = Math.max(0.8, skew - 0.001);
-                confetti({ particleCount: 1, startVelocity: 0, ticks: ticks, origin: { x: Math.random(), y: (Math.random() * skew) - 0.2 }, colors: ['#ffffff'], shapes: ['circle'], gravity: 0.6, scalar: 0.5, drift: 0 });
-                if (timeLeft > 0) requestAnimationFrame(frame);
-            }());
-        },
-
-        // 9. Real Rain
-        realRain: () => {
-             confetti({ particleCount: 100, spread: 180, origin: { y: -0.1 }, startVelocity: 40, gravity: 1.5, drift: 0, ticks: 400, colors: ['#2563eb', '#60a5fa'], shapes: ['square'], scalar: 0.5 });
-        },
-
-        // 10. Money
-        money: () => {
-             const scalar = 2;
-             const cash = confetti.shapeFromText({ text: '💸', scalar });
-             confetti({ particleCount: 30, spread: 90, origin: { y: 0.6 }, shapes: [cash], scalar });
-        },
-
-        // 11. Blast Left
-        blastLeft: () => confetti({ particleCount: 100, angle: 60, spread: 70, origin: { x: 0, y: 0.6 } }),
-
-        // 12. Blast Right
-        blastRight: () => confetti({ particleCount: 100, angle: 120, spread: 70, origin: { x: 1, y: 0.6 } }),
-
-        // 13. Vortex
-        vortex: () => {
-            let count = 200;
-            let defaults = { origin: { y: 0.7 } };
-            function fire(particleRatio, opts) {
-                confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) }));
-            }
-            fire(0.25, { spread: 26, startVelocity: 55 });
-            fire(0.2, { spread: 60 });
-            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-            fire(0.1, { spread: 120, startVelocity: 45 });
-        },
-
-        // 14. Slow Fall
-        slowFall: () => confetti({ particleCount: 100, spread: 360, startVelocity: 20, gravity: 0.4, ticks: 300, origin: { y: 0.1 }, colors: ['#FFD700', '#C0C0C0'] }),
-
-        // 15. Center Explosion
-        centerExplosion: () => confetti({ particleCount: 150, spread: 180, origin: { y: 0.5 }, startVelocity: 45 }),
-
-        // 16. Text Pop Function
+        // 4. Text Pop Function
         textPop: (text, gradient) => {
             const el = document.createElement('div');
             el.className = 'dopamine-text';
             el.innerText = text;
             if(gradient) { el.style.backgroundImage = gradient; el.style.webkitBackgroundClip = 'text'; el.style.webkitTextFillColor = 'transparent'; }
             document.body.appendChild(el);
-            confetti({ particleCount: 50, spread: 90, origin: { y: 0.6 } });
+            confetti({ particleCount: 40, spread: 90, origin: { y: 0.6 }, disableForReducedMotion: true });
             setTimeout(() => el.remove(), 2000);
         },
 
-        // 17. Golden Flash
+        // 5. Golden Flash
         goldenFlash: () => {
              const el = document.createElement('div');
              el.className = 'flash-overlay';
              el.style.background = 'radial-gradient(circle, rgba(253,224,71,0.4) 0%, rgba(255,255,255,0) 70%)';
              document.body.appendChild(el);
              setTimeout(() => el.remove(), 600);
-             confetti({ particleCount: 80, spread: 100, origin: { y: 0.6 }, colors: ['#facc15'] });
+             confetti({ particleCount: 80, spread: 100, origin: { y: 0.6 }, colors: ['#facc15'], disableForReducedMotion: true });
         },
 
-        // 18. Brutal Punish
+        // 6. Brutal Punish
         punish: (customText = null) => {
              const el = document.createElement('div');
              el.className = 'flash-overlay';
