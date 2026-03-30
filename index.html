@@ -2428,7 +2428,70 @@ html.dark .boot-status, html.growth-mode .boot-status {
              setTimeout(() => textEl.remove(), 2000);
 
              if (navigator.vibrate) navigator.vibrate([200, 100, 300, 100, 500]);
+        },
+                // 7. Side Cannons (Shoots inward from both edges)
+        sideCannons: () => {
+            const defaults = { startVelocity: 45, spread: 60, ticks: 100, zIndex: 1000, disableForReducedMotion: true };
+            confetti(Object.assign({}, defaults, { particleCount: 60, angle: 45, origin: { x: 0, y: 0.8 }, colors: ['#ec4899', '#8b5cf6'] }));
+            confetti(Object.assign({}, defaults, { particleCount: 60, angle: 135, origin: { x: 1, y: 0.8 }, colors: ['#06b6d4', '#3b82f6'] }));
+        },
+
+        // 8. Fountain (A continuous stream shooting up from the bottom center)
+        fountain: () => {
+            let duration = 1000;
+            let animationEnd = Date.now() + duration;
+            let defaults = { startVelocity: 30, spread: 20, ticks: 60, zIndex: 1000, disableForReducedMotion: true };
+            let interval = setInterval(function() {
+                let timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                confetti(Object.assign({}, defaults, { particleCount: 15, origin: { x: 0.5, y: 1 }, colors: ['#34d399', '#10b981', '#059669'] }));
+            }, 100);
+        },
+
+        // 9. Star Shower (Gold stars gently falling from the top)
+        starShower: () => {
+            confetti({ particleCount: 60, spread: 180, startVelocity: 20, gravity: 0.5, ticks: 200, origin: { y: 0 }, shapes: ['star'], colors: ['#fbbf24', '#f59e0b', '#d97706', '#fef3c7'], disableForReducedMotion: true });
+        },
+
+        // 10. Matrix Rain (Digital green lines falling vertically)
+        matrixRain: () => {
+            confetti({ particleCount: 100, spread: 100, startVelocity: 15, gravity: 1.2, drift: 0, ticks: 150, origin: { y: -0.1 }, shapes: ['square'], scalar: 0.6, colors: ['#22c55e', '#16a34a', '#15803d', '#4ade80'], disableForReducedMotion: true });
+        },
+
+        // 11. Sonic Boom (A flat, high-velocity horizontal shockwave)
+        sonicBoom: () => {
+            confetti({ particleCount: 150, spread: 10, startVelocity: 80, decay: 0.85, ticks: 100, origin: { y: 0.5 }, colors: ['#f8fafc', '#cbd5e1', '#94a3b8'], disableForReducedMotion: true });
+        },
+
+        // 12. Cherry Blossom (Soft pink petals drifting slowly in the wind)
+        cherryBlossom: () => {
+            confetti({ particleCount: 50, spread: 120, startVelocity: 25, gravity: 0.3, drift: 1.5, ticks: 300, origin: { y: 0.3 }, shapes: ['circle'], scalar: 1.2, colors: ['#fbcfe8', '#f9a8d4', '#f472b6', '#ffffff'], disableForReducedMotion: true });
+        },
+
+        // 13. Neon Pulse (Cyberpunk magenta, cyan, and yellow double-burst)
+        neonPulse: () => {
+            const defaults = { origin: { y: 0.6 }, zIndex: 1000, disableForReducedMotion: true };
+            confetti(Object.assign({}, defaults, { particleCount: 80, spread: 100, startVelocity: 50, colors: ['#f0abfc', '#22d3ee', '#fde047'] }));
+            setTimeout(() => {
+                confetti(Object.assign({}, defaults, { particleCount: 60, spread: 120, startVelocity: 60, colors: ['#d946ef', '#06b6d4', '#eab308'] }));
+            }, 250);
+        },
+
+        // 14. Anti-Gravity (Particles start at the bottom and float UP into the sky)
+        antiGravity: () => {
+            confetti({ particleCount: 80, spread: 140, startVelocity: 40, gravity: -0.5, ticks: 150, origin: { y: 1 }, colors: ['#c084fc', '#a855f7', '#9333ea', '#e9d5ff'], disableForReducedMotion: true });
+        },
+
+        // 15. Shattered Glass (Sharp, aggressive white and cyan burst with fast decay)
+        shatteredGlass: () => {
+            confetti({ particleCount: 120, spread: 360, startVelocity: 65, decay: 0.8, gravity: 1.5, ticks: 80, origin: { y: 0.4 }, shapes: ['square'], scalar: 0.7, colors: ['#ffffff', '#e0f2fe', '#bae6fd'], disableForReducedMotion: true });
+        },
+
+        // 16. Supernova (A dense, perfect circle expanding outward)
+        supernova: () => {
+            confetti({ particleCount: 200, spread: 360, startVelocity: 35, decay: 0.95, gravity: 0, ticks: 100, origin: { y: 0.5 }, colors: ['#fef08a', '#fde047', '#eab308', '#ca8a04', '#ffffff'], disableForReducedMotion: true });
         }
+
     };
 
 
