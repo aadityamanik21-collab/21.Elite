@@ -2298,22 +2298,15 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 dopamine.antiGravity,
                 dopamine.shatteredGlass,
                 dopamine.supernova
-            ].filter(fn => typeof fn === 'function'); // Failsafe to ensure the function exists
+            ].filter(fn => typeof fn === 'function'); 
 
-            // 3. Fire a random animation EVERY single time you complete a task
+            // 3. Fire a pure, text-free animation EVERY single time you complete a task
             if (animations.length > 0) {
                 const randomAnim = animations[Math.floor(Math.random() * animations.length)];
                 randomAnim();
             } else {
                 // Ultimate fallback just in case
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true });
-            }
-
-            // 4. Show a quick text pop 30% of the time (keeps it satisfying but not visually exhausting)
-            if (Math.random() > 0.7 && typeof dopamine.textPop === 'function') {
-                const praises = ["LOGGED.", "SOLID.", "DONE.", "NICE.", "BOOM."];
-                const text = praises[Math.floor(Math.random() * praises.length)];
-                dopamine.textPop(text, "linear-gradient(to right, #38bdf8, #0ea5e9)");
             }
         },
 
