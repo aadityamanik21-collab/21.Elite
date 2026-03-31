@@ -4666,7 +4666,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     app.updateStreakDisplay();
                 }
             },
-                                renderVault: () => {
+                                        renderVault: () => {
             try {
                 const list = document.getElementById('vault-list');
                 list.innerHTML = '';
@@ -4678,33 +4678,50 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     backBtn.classList.add('hidden');
                     let foundAny = false;
                     
-                    (app.projectGroups || ['General']).forEach(grp => {
-                        const items = (app.data || []).filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && (x.group || 'General') === grp)
+                    const safeData = app.data || [];
+                    // FIX: Strictly fallback to 'General' if the array is entirely empty
+                    const activeGroups = (app.projectGroups && app.projectGroups.length > 0) ? app.projectGroups : ['General'];
+                    
+                    activeGroups.forEach(grp => {
+                        const items = safeData.filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && (x.group || 'General') === grp)
                                       .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 100);
                         if (items.length > 0) {
                             foundAny = true;
-                            list.innerHTML += `<div class="group-header bg-green-50 border-green-200 mt-4"><span class="group-title text-green-700">${escapeHTML(grp)}</span></div>`;
-                            items.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
+                            // FIX: Use pure DOM manipulation to prevent innerHTML from destroying active nodes
+                            const header = document.createElement('div');
+                            header.className = "group-header bg-green-50 border-green-200 mt-4";
+                            header.innerHTML = `<span class="group-title text-green-700">${escapeHTML(grp)}</span>`;
+                            list.appendChild(header);
+                            items.forEach(i => list.appendChild(app.createVaultNode(i)));
                         }
                     });
                     
-                    const orphans = (app.data || []).filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && !(app.projectGroups || []).includes(x.group || 'General'));
+                    const orphans = safeData.filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && !activeGroups.includes(x.group || 'General'));
                     if(orphans.length > 0) {
                         foundAny = true;
-                        list.innerHTML += `<div class="group-header bg-green-50 border-green-200 mt-4"><span class="group-title text-green-700">Unsorted</span></div>`;
-                        orphans.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
+                        const header = document.createElement('div');
+                        header.className = "group-header bg-green-50 border-green-200 mt-4";
+                        header.innerHTML = `<span class="group-title text-green-700">Unsorted</span>`;
+                        list.appendChild(header);
+                        orphans.forEach(i => list.appendChild(app.createVaultNode(i)));
                     }
 
-                    const partials = (app.data || []).filter(x => x && x.completed && x.partial && x.type !== 'event')
+                    // FIX: Ensure partials check also strictly looks at root-level items (!x.parentId)
+                    const partials = safeData.filter(x => x && x.completed && x.partial && !x.parentId && x.type !== 'event')
                                     .sort((a,b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
                     
                     if(partials.length > 0) {
                         foundAny = true;
-                        list.innerHTML += `<div class="mt-8 border-t-2 border-dashed border-slate-300 pt-4"><div class="group-header bg-slate-200 border-slate-300"><span class="group-title text-slate-600"><i class="fas fa-battery-half mr-2"></i>Half-Measures (Given Up)</span></div></div>`;
-                        partials.forEach(i => { try { list.appendChild(app.createDullVaultNode(i)); } catch(e){} });
+                        const header = document.createElement('div');
+                        header.className = "mt-8 border-t-2 border-dashed border-slate-300 pt-4";
+                        header.innerHTML = `<div class="group-header bg-slate-200 border-slate-300"><span class="group-title text-slate-600"><i class="fas fa-battery-half mr-2"></i>Half-Measures (Given Up)</span></div>`;
+                        list.appendChild(header);
+                        partials.forEach(i => list.appendChild(app.createDullVaultNode(i)));
                     }
 
-                    if (!foundAny) list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">The Vault is empty. Get to work.</div>`;
+                    if (!foundAny) {
+                        list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">The Vault is empty. Get to work.</div>`;
+                    }
                 } else {
                     const parent = (app.data || []).find(x => x && x.id === app.currVaultParent);
                     title.innerText = parent ? parent.title : "Items";
@@ -4716,16 +4733,19 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     if(items.length === 0 && partials.length === 0) {
                         list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">No completed sub-items.</div>`;
                     } else {
-                        items.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
+                        items.forEach(i => list.appendChild(app.createVaultNode(i)));
                         if (partials.length > 0) {
-                            list.innerHTML += `<div class="mt-6 border-t border-slate-300 pt-4 mb-2"><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Abandoned Sub-Items</span></div>`;
-                            partials.forEach(i => { try { list.appendChild(app.createDullVaultNode(i)); } catch(e){} });
+                            const header = document.createElement('div');
+                            header.className = "mt-6 border-t border-slate-300 pt-4 mb-2";
+                            header.innerHTML = `<span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Abandoned Sub-Items</span>`;
+                            list.appendChild(header);
+                            partials.forEach(i => list.appendChild(app.createDullVaultNode(i)));
                         }
                     }
                 }
             } catch(e) {
-                console.error("Vault UI Core Crash:", e);
-                document.getElementById('vault-list').innerHTML = `<div class="text-center text-red-500 mt-10 italic">Error rendering Vault. Refresh app.</div>`;
+                console.error("Vault rendering error:", e);
+                document.getElementById('vault-list').innerHTML = `<div class="text-center text-red-500 mt-10 italic">System error loading Vault. Check console.</div>`;
             }
         },
 
@@ -4734,7 +4754,10 @@ html.dark .boot-status, html.growth-mode .boot-status {
             const el = document.createElement('div');
             el.className = "bg-white p-4 rounded-xl border border-green-100 shadow-sm mb-2 flex items-center gap-4 cursor-pointer hover:bg-green-50 transition-colors";
             el.onclick = () => app.vaultDrill(i.id);
-            const safeTime = i.completedAt ? String(i.completedAt).split('T')[0] : 'Unknown';
+            
+            let safeTime = 'Unknown';
+            if (i.completedAt) safeTime = String(i.completedAt).split('T')[0];
+
             el.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-inner shadow-green-700/50"><i class="fas fa-check text-xs"></i></div>
                 <div class="flex-1">
@@ -4745,7 +4768,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                         </div>
                         <button onclick="event.stopPropagation(); app.vaultRevive('${i.id}')" class="text-[9px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-500 px-2 py-1 rounded transition-colors border border-slate-200"><i class="fas fa-undo mr-1"></i> PULL BACK</button>
                     </div>
-                    <h3 class="font-bold text-slate-700">${escapeHTML(i.title || 'Unknown')}</h3>
+                    <h3 class="font-bold text-slate-700">${escapeHTML(i.title || 'Unknown Target')}</h3>
                     <div class="text-[10px] text-slate-400 font-mono mt-1">Completed: ${safeTime}</div>
                 </div>
                 <i class="fas fa-chevron-right text-slate-300 ml-1"></i>
@@ -4763,7 +4786,10 @@ html.dark .boot-status, html.growth-mode .boot-status {
             const el = document.createElement('div');
             el.className = "vault-dull-card p-4 rounded-xl mb-2 flex items-center gap-4 cursor-pointer transition-colors";
             el.onclick = () => app.vaultDrill(i.id);
-            const safeTime = i.completedAt ? String(i.completedAt).split('T')[0] : 'Unknown';
+            
+            let safeTime = 'Unknown';
+            if (i.completedAt) safeTime = String(i.completedAt).split('T')[0];
+
             el.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-slate-300 text-slate-500 flex items-center justify-center shadow-inner"><i class="fas fa-minus text-xs"></i></div>
                 <div class="flex-1">
@@ -4782,7 +4808,6 @@ html.dark .boot-status, html.growth-mode .boot-status {
             `;
             return el;
         },
-
             // --- CALENDAR & BOARD ---
            
             setCalendarMode: (mode) => {
