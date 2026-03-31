@@ -1572,6 +1572,21 @@ html.dark .boot-status, html.growth-mode .boot-status {
                         <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                     </label>
                 </div>
+                
+                <div id="growth-color-picker" class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between transition-colors hidden">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">System Color</h4>
+                        <p class="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">Aesthetic Override</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.applySystemTheme('blue')" class="w-6 h-6 rounded-full bg-sky-500 border border-slate-200 shadow-sm active:scale-95 transition-transform"></button>
+                        <button onclick="app.applySystemTheme('red')" class="w-6 h-6 rounded-full bg-red-500 border border-slate-200 shadow-sm active:scale-95 transition-transform"></button>
+                        <button onclick="app.applySystemTheme('green')" class="w-6 h-6 rounded-full bg-emerald-500 border border-slate-200 shadow-sm active:scale-95 transition-transform"></button>
+                        <button onclick="app.applySystemTheme('purple')" class="w-6 h-6 rounded-full bg-purple-500 border border-slate-200 shadow-sm active:scale-95 transition-transform"></button>
+                        <button onclick="app.applySystemTheme('gold')" class="w-6 h-6 rounded-full bg-amber-400 border border-slate-200 shadow-sm active:scale-95 transition-transform"></button>
+                    </div>
+                </div>
+
                 <button onclick="app.toggleTheme()" class="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left outline-none">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center"><i id="theme-icon-inner" class="fas fa-moon"></i></div>
@@ -3607,14 +3622,18 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     await journal.init(); 
                 } catch(e) { console.error("Critical DB Failure:", e); }
 
-                if (localStorage.getItem('zenith_growth_mode') === 'true') {
-                    document.documentElement.classList.add('growth-mode');
-                    const gt = document.getElementById('growth-mode-toggle'); if (gt) gt.checked = true;
-                }
-                app.initSeason(); 
-            },
-                
-            initSeason: () => {
+            if (localStorage.getItem('zenith_growth_mode') === 'true') {
+                document.documentElement.classList.add('growth-mode');
+                const gt = document.getElementById('growth-mode-toggle');
+                if (gt) gt.checked = true;
+                const cp = document.getElementById('growth-color-picker');
+                if(cp) cp.classList.remove('hidden');
+                app.applySystemTheme(localStorage.getItem('zenith_sys_color') || 'blue');
+            }
+            app.initSeason();
+        },
+
+        initSeason: () => {
                 const month = new Date().getMonth(); 
                 const overlay = document.getElementById('season-overlay');
                 let html = '';
@@ -4298,35 +4317,36 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     if(scopedTasks.length === 0) {
                         list.innerHTML = '<div class="text-center mt-20 opacity-50"><i class="fas fa-ghost text-4xl text-slate-300 dark:text-slate-600 mb-3"></i><p class="text-slate-500 font-mono text-xs">No targets in this horizon.</p></div>';
                     } else {
-                        app.projectGroups.forEach(grp => {
-                            const activeItems = scopedTasks.filter(x => !x.failed && !x.completed && (x.group || 'General') === grp);
-                            const stampedItems = scopedTasks.filter(x => x.completed && !x.failed && !x.partial && (x.group || 'General') === grp)
-                                .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 12);
-                            
-                            const header = document.createElement('div');
-                            header.className = 'group-header transition-colors';
-                            header.setAttribute('data-group', grp);
-                            header.addEventListener('dragover', app.handleDragOver); header.addEventListener('dragenter', app.handleDragEnter); header.addEventListener('dragleave', app.handleDragLeave); header.addEventListener('drop', app.handleDrop);
-                            header.innerHTML = `<span class="group-title pointer-events-none">${grp}</span>${grp!=='General' ? `<button onclick="app.deleteGroup('project','${grp}')" class="text-slate-300 hover:text-red-500 z-10 relative"><i class="fas fa-trash pointer-events-none"></i></button>` : ''}`;
-                            list.appendChild(header);
-                            
-                            if(activeItems.length === 0 && stampedItems.length === 0) { 
-                                list.innerHTML += '<div class="text-[9px] text-slate-300 italic pl-2 mb-2">Empty</div>'; 
-                            } else { 
-                                                            const frag = document.createDocumentFragment();
-                            const mobileCap = 30;
-                            activeItems.slice(0, mobileCap).forEach(i => frag.appendChild(app.createItemEl(i))); 
-                            if (activeItems.length > mobileCap) {
-                                const overflowMsg = document.createElement('div');
-                                overflowMsg.className = "text-[10px] text-slate-400 font-bold text-center mt-3 mb-3 uppercase tracking-widest";
-                                overflowMsg.innerText = `+ ${activeItems.length - mobileCap} MORE HIDDEN. EXECUTE TO REVEAL.`;
-                                frag.appendChild(overflowMsg);
-                            }
-                            stampedItems.forEach(i => frag.appendChild(app.createStampEl(i)));
-                            list.appendChild(frag);
+                                        app.projectGroups.forEach(grp => {
+                    const activeItems = scopedTasks.filter(x => !x.failed && !x.completed && (x.group || 'General') === grp);
+                    const stampedItems = scopedTasks.filter(x => x.completed && !x.failed && !x.partial && (x.group || 'General') === grp)
+                        .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 12);
 
-                            }
-                        });
+                    // FIX: Completely skip and hide any groups that are empty
+                    if(activeItems.length === 0 && stampedItems.length === 0) return;
+
+                    const header = document.createElement('div');
+                    header.className = 'group-header transition-colors';
+                    header.setAttribute('data-group', grp);
+                    header.addEventListener('dragover', app.handleDragOver);
+                    header.addEventListener('dragenter', app.handleDragEnter);
+                    header.addEventListener('dragleave', app.handleDragLeave);
+                    header.addEventListener('drop', app.handleDrop);
+                    header.innerHTML = `<span class="group-title pointer-events-none">${grp}</span>${grp!=='General' ? `<button onclick="app.deleteGroup('project','${grp}')" class="text-slate-300 hover:text-red-500 z-10 relative"><i class="fas fa-trash pointer-events-none"></i></button>` : ''}`;
+                    list.appendChild(header);
+
+                    const frag = document.createDocumentFragment();
+                    const mobileCap = 30;
+                    activeItems.slice(0, mobileCap).forEach(i => frag.appendChild(app.createItemEl(i)));
+                    if (activeItems.length > mobileCap) {
+                        const overflowMsg = document.createElement('div');
+                        overflowMsg.className = "text-[10px] text-slate-400 font-bold text-center mt-3 mb-3 uppercase tracking-widest";
+                        overflowMsg.innerText = `+ ${activeItems.length - mobileCap} MORE HIDDEN. EXECUTE TO REVEAL.`;
+                        frag.appendChild(overflowMsg);
+                    }
+                    stampedItems.forEach(i => frag.appendChild(app.createStampEl(i)));
+                    list.appendChild(frag);
+                });
                         
                         const activeOrphans = scopedTasks.filter(x => !x.failed && !x.completed && !app.projectGroups.includes(x.group || 'General'));
                         const stampedOrphans = scopedTasks.filter(x => x.completed && !x.failed && !x.partial && !app.projectGroups.includes(x.group || 'General'))
@@ -7755,38 +7775,38 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
 
                     setTimeout(() => {
                         // The screen is now completely obscured. Swap the heavy CSS classes instantly.
-                        if (isTurningOff) {
-                            html.classList.remove('growth-mode');
-                            localStorage.setItem('zenith_growth_mode', 'false');
-                            if(toggle) toggle.checked = false;
-                            
-                            if (window.speechSynthesis) {
-                                const utterance = new SpeechSynthesisUtterance("System deactivated.");
-                                utterance.pitch = 0.4; window.speechSynthesis.speak(utterance);
-                            }
-                        } else {
-                            html.classList.add('growth-mode');
-                            localStorage.setItem('zenith_growth_mode', 'true');
-                            if(toggle) toggle.checked = true;
-                            
-                            if (!html.classList.contains('dark')) {
-                                html.classList.add('dark');
-                                localStorage.setItem('zenith_theme', 'dark');
-                                const themeIcon = document.getElementById('theme-icon-inner');
-                                const themeText = document.getElementById('theme-text-inner');
-                                if(themeIcon) themeIcon.className = 'fas fa-sun';
-                                if(themeText) themeText.innerText = 'Engage Light Mode';
-                            }
-
-                            if(typeof systemAudio !== 'undefined') systemAudio.awaken();
-                            coreSystem.init(); 
-                            
-                            if(typeof dopamine !== 'undefined') dopamine.punish("SYSTEM ONLINE");
-                        }
-                        
-                        app.updateThemeColor();
-                        if(!document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
-                        document.getElementById('settings-overlay').classList.remove('open');
+                                        const colorPicker = document.getElementById('growth-color-picker');
+                if (isTurningOff) {
+                    html.classList.remove('growth-mode');
+                    localStorage.setItem('zenith_growth_mode', 'false');
+                    if(toggle) toggle.checked = false;
+                    if(colorPicker) colorPicker.classList.add('hidden');
+                    if (window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance("System deactivated.");
+                        utterance.pitch = 0.4;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                } else {
+                    html.classList.add('growth-mode');
+                    localStorage.setItem('zenith_growth_mode', 'true');
+                    if(toggle) toggle.checked = true;
+                    if(colorPicker) colorPicker.classList.remove('hidden');
+                    app.applySystemTheme(localStorage.getItem('zenith_sys_color') || 'blue');
+                    if (!html.classList.contains('dark')) {
+                        html.classList.add('dark');
+                        localStorage.setItem('zenith_theme', 'dark');
+                        const themeIcon = document.getElementById('theme-icon-inner');
+                        const themeText = document.getElementById('theme-text-inner');
+                        if(themeIcon) themeIcon.className = 'fas fa-sun';
+                        if(themeText) themeText.innerText = 'Engage Light Mode';
+                    }
+                    if(typeof systemAudio !== 'undefined') systemAudio.awaken();
+                    coreSystem.init();
+                    if(typeof dopamine !== 'undefined') dopamine.punish("SYSTEM ONLINE");
+                }
+                app.updateThemeColor();
+                if(!document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
+                document.getElementById('settings-overlay').classList.remove('open');
 
                         // 3. DISSIPATE MASK SMOOTHLY
                         mask.style.transition = 'opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), backdrop-filter 0.6s ease-out';
@@ -7799,7 +7819,92 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
                 });
             },
 
-            exportData: async () => {
+                    applySystemTheme: (color) => {
+            localStorage.setItem('zenith_sys_color', color);
+            let p, b, l, pR, bR;
+            if (color === 'red') { p='#ef4444'; b='#b91c1c'; l='#fca5a5'; pR='239, 68, 68'; bR='185, 28, 28'; }
+            else if (color === 'green') { p='#10b981'; b='#047857'; l='#6ee7b7'; pR='16, 185, 129'; bR='4, 120, 87'; }
+            else if (color === 'purple') { p='#a855f7'; b='#7e22ce'; l='#d8b4fe'; pR='168, 85, 247'; bR='126, 34, 206'; }
+            else if (color === 'gold') { p='#fbbf24'; b='#b45309'; l='#fde047'; pR='251, 191, 36'; bR='180, 83, 9'; }
+            else { 
+                const existing = document.getElementById('system-theme-override');
+                if(existing) existing.remove(); 
+                return; 
+            }
+
+            let styleEl = document.getElementById('system-theme-override');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'system-theme-override';
+                document.head.appendChild(styleEl);
+            }
+            
+            styleEl.innerHTML = `
+                html.growth-mode body, html.growth-mode .splash-icon, html.growth-mode .nav-btn.active, html.growth-mode i:not([class*="text-"]), html.growth-mode .fab, html.growth-mode .system-top-btn, html.growth-mode #header-logo i, html.growth-mode .success-icon { color: ${p} !important; }
+                html.growth-mode .splash-text { -webkit-text-fill-color: ${p} !important; text-shadow: 0 0 20px ${p} !important; }
+                html.growth-mode .glass, html.growth-mode .glass-nav, html.growth-mode .modal, html.growth-mode .card, html.growth-mode .board-col, html.growth-mode .vault-content, html.growth-mode .fv-content, html.growth-mode .fv-header, html.growth-mode .fv-footer, html.growth-mode .preview-card, html.growth-mode .cal-day-box, html.growth-mode #success-popup, html.growth-mode #health-card, html.growth-mode .bento-wide, html.growth-mode .streak-row, html.growth-mode .board-card, html.growth-mode #reality-check-banner, html.growth-mode #stats-filter-banner, html.growth-mode .vault-dull-card, html.growth-mode .file-item, html.growth-mode .snap-start, html.growth-mode input, html.growth-mode select, html.growth-mode textarea, html.growth-mode #j-editor, html.growth-mode button, html.growth-mode .priority-btn { border-color: ${b} !important; }
+                html.growth-mode .glass, html.growth-mode .glass-nav, html.growth-mode .modal, html.growth-mode .card, html.growth-mode .board-col, html.growth-mode .vault-content, html.growth-mode .bento-wide, html.growth-mode .board-card { box-shadow: 0 0 20px rgba(${bR}, 0.3), inset 0 0 15px rgba(${bR}, 0.15) !important; }
+                html.growth-mode h1, html.growth-mode h2, html.growth-mode h3, html.growth-mode h4, html.growth-mode .text-slate-800, html.growth-mode .text-slate-700, html.growth-mode .group-title, html.growth-mode #health-card h2, html.growth-mode #health-card p, html.growth-mode .text-slate-500 { color: ${l} !important; -webkit-text-fill-color: ${l} !important; text-shadow: 0 0 10px rgba(${bR}, 0.8) !important; }
+                html.growth-mode input, html.growth-mode select, html.growth-mode textarea, html.growth-mode #j-editor, html.growth-mode button, html.growth-mode .priority-btn { background: rgba(${bR}, 0.1) !important; color: ${l} !important; box-shadow: inset 0 0 10px rgba(${bR}, 0.2) !important; }
+                html.growth-mode input:focus, html.growth-mode select:focus, html.growth-mode #j-editor:focus { border-color: ${p} !important; box-shadow: 0 0 10px rgba(${pR}, 0.4), inset 0 0 10px rgba(${pR}, 0.3) !important; }
+                html.growth-mode button:active, html.growth-mode .priority-btn:active { background: rgba(${bR}, 0.5) !important; box-shadow: 0 0 15px ${b} !important; }
+                html.growth-mode .dock-btn.active { color: #fff !important; background: rgba(${bR}, 0.25) !important; box-shadow: inset 0 -3px 0 ${p}, 0 -10px 20px rgba(${bR}, 0.4) inset, 0 10px 20px rgba(0,0,0,0.5) !important; text-shadow: 0 0 12px #fff !important; }
+                html.growth-mode .dock-btn.active i { filter: drop-shadow(0 0 8px ${p}) !important; }
+                html.growth-mode .nav-btn.active { color: ${p} !important; text-shadow: 0 0 8px ${p} !important; }
+                html.growth-mode .bg-white, html.growth-mode [class*="bg-slate-"], html.growth-mode [class*="bg-gray-"], html.growth-mode [class*="bg-indigo-"], html.growth-mode [class*="bg-blue-"] { border-color: ${b} !important; }
+                html.growth-mode [class*="text-indigo-"], html.growth-mode [class*="text-blue-"] { color: ${p} !important; text-shadow: 0 0 8px rgba(${pR}, 0.5) !important; }
+                html.growth-mode #daily-progress-bar { background: ${p} !important; box-shadow: 0 0 15px ${p} !important; }
+                html.growth-mode #growth-mode-toggle + div { background-color: rgba(${bR}, 0.2) !important; border: 1px solid ${b} !important; }
+                html.growth-mode #growth-mode-toggle:checked + div { background-color: rgba(${bR}, 0.5) !important; box-shadow: 0 0 15px rgba(${bR}, 0.8) inset !important; border-color: ${p} !important; }
+                html.growth-mode #growth-mode-toggle + div::after { border: 1px solid ${b} !important; box-shadow: 0 0 5px rgba(${bR}, 0.8) !important; }
+                html.growth-mode #growth-mode-toggle:checked + div::after { border-color: ${l} !important; box-shadow: 0 0 10px ${l}, 0 0 20px ${p} !important; }
+                html.growth-mode body { background-image: linear-gradient(rgba(${bR}, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(${bR}, 0.1) 1px, transparent 1px) !important; }
+                html.growth-mode body::before { background: linear-gradient(to bottom, transparent, rgba(${pR}, 0.2), transparent); }
+                @keyframes systemPulse { 0% { border-color: rgba(${pR}, 0.3); opacity: 0.9; } 100% { border-color: rgba(${pR}, 0.9); opacity: 1; } }
+                html.growth-mode #header-logo { border: 1px solid ${p} !important; box-shadow: 0 0 15px rgba(${bR}, 0.5) inset !important; }
+                html.growth-mode #about-modal .bg-red-50, html.growth-mode #about-modal .bg-blue-50 { border: 1px solid ${b} !important; border-left: 4px solid ${p} !important; box-shadow: 0 0 10px rgba(${bR}, 0.2) inset !important; }
+                html.growth-mode .settings-action-btn { border: 1px solid ${b} !important; background: rgba(${bR}, 0.15) !important; color: ${p} !important; text-shadow: 0 0 5px rgba(${pR},0.5) !important; }
+                .sl-overlay { background-image: radial-gradient(circle at center, rgba(${pR}, 0.05) 0%, transparent 70%); }
+                .sl-window { border: 1px solid rgba(${pR}, 0.5); box-shadow: 0 0 40px rgba(${bR}, 0.6), inset 0 0 20px rgba(${pR}, 0.2); }
+                .sl-window::before { border: 2px solid rgba(${pR}, 0.2); }
+                .sl-corner { border: 3px solid ${p}; box-shadow: 0 0 10px ${p}; }
+                .sl-header { border-image: linear-gradient(to right, transparent, rgba(${pR}, 0.8), transparent) 1; }
+                .sl-header::before { color: ${p}; text-shadow: 0 0 10px ${p}; }
+                .sl-header-title { text-shadow: 0 0 15px rgba(${pR},1); }
+                .sl-text { text-shadow: 0 0 8px rgba(${pR}, 0.6); }
+                .sl-quest-btn { color: ${p}; text-shadow: 0 0 10px rgba(${pR}, 0.8); }
+                .sl-quest-btn:hover { text-shadow: 0 0 20px #fff; }
+                .sl-quest-btn:active { text-shadow: 0 0 5px ${p}; }
+                .sl-timer { color: ${p}; text-shadow: 0 0 20px rgba(${pR},1); }
+                .sl-btn { background: linear-gradient(180deg, rgba(${pR}, 0.1) 0%, transparent 100%); border: 1px solid ${p}; color: ${p}; box-shadow: inset 0 0 15px rgba(${pR}, 0.3); }
+                .sl-btn:active { background: rgba(${pR}, 0.4); }
+                .sl-cursor { background: ${p}; box-shadow: 0 0 10px ${p}; }
+                .pt-node { border-left: 2px solid rgba(${pR}, 0.4); }
+                .pt-node::before { background: rgba(${pR}, 0.4); }
+                .pt-title { text-shadow: 0 0 5px rgba(${pR}, 0.6); }
+                html.dark .system-top-btn { color: ${p}; }
+                html.dark .system-top-btn i { color: ${p}; }
+                html.growth-mode .system-top-btn { color: ${p} !important; text-shadow: 0 0 10px rgba(${pR}, 0.8) !important; }
+                html.growth-mode .glass-nav { border-bottom: 1px solid rgba(${pR}, 0.4) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
+                html.growth-mode .dock-container { box-shadow: 0 -10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
+                html.growth-mode #top-nav-dock button i { color: ${p} !important; filter: drop-shadow(0 0 5px rgba(${pR},0.6)) !important; }
+                html.growth-mode .streak-btn, html.growth-mode #top-nav-dock .bg-orange-50 { border: 1px solid rgba(${pR}, 0.4) !important; background: rgba(${bR}, 0.15) !important; }
+                html.growth-mode #fire-streak-display { color: ${p} !important; }
+                #tour-dialog { border: 1px solid ${p}; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(${pR},0.1); }
+                .flow-group { background: rgba(${pR}, 0.05); border: 1px solid rgba(${pR}, 0.2); }
+                .flow-group-title { color: ${p}; }
+                .flow-nodes { border-left: 2px dashed rgba(${pR}, 0.4); }
+                .flow-node::before { background: rgba(${pR}, 0.4); }
+                .flow-node::after { border: 2px solid ${p}; }
+                html.growth-mode .flow-node { border-color: ${b}; }
+                html.growth-mode .flow-group { background: rgba(${bR}, 0.05); border-color: rgba(${bR}, 0.3); }
+                html.growth-mode .flow-group-title { border-color: ${b}; color: ${p}; }
+                html.growth-mode .flow-node::after { border-color: ${b}; }
+            `;
+        },
+
+        exportData: async () => {
+
                 try {
                     const backup = {
                         data: app.data, files: app.files, programs: app.programs,
