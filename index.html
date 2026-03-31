@@ -4090,13 +4090,14 @@ html.dark .boot-status, html.growth-mode .boot-status {
             }
         },
             
-                                                    processRecurringTasks: () => {
+                                                            processRecurringTasks: () => {
             if (!app.data) return;
             const today = app.getLocalISO();
             let modified = false;
 
             const recurringTasks = app.data.filter(t => t.recurring === true && t.type !== 'event');
             const uniqueRecurring = {};
+            
             recurringTasks.forEach(t => {
                 if (!uniqueRecurring[t.title] || t.deadline > uniqueRecurring[t.title].deadline) {
                     uniqueRecurring[t.title] = t;
@@ -4104,39 +4105,57 @@ html.dark .boot-status, html.growth-mode .boot-status {
             });
 
             Object.values(uniqueRecurring).forEach(template => {
-                // Safely parse today's date to avoid cross-browser timezone bugs
-                const [y, m, d] = today.split('-').map(Number);
+                if (template.recurringUntil && today > template.recurringUntil) return;
+
+                // Stop if there's already an unfinished active task for this recurring chain
+                const hasActive = app.data.some(t => t.title === template.title && t.recurring === true && !t.completed && !t.failed && !t.partial);
+                if (hasActive) return;
+
+                // Timezone-safe parsing of the template's last deadline
+                const [y, m, d] = template.deadline.split('-').map(Number);
+                let nextDate = new Date(y, m - 1, d);
                 
-                // Pre-spawn up to 14 days ahead so tasks actually show up on the calendar schedule
-                for (let i = 0; i <= 14; i++) {
-                    const targetDate = new Date(y, m - 1, d + i);
-                    const dStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth()+1).padStart(2,'0')}-${String(targetDate.getDate()).padStart(2,'0')}`;
-                    
-                    if (template.recurringUntil && dStr > template.recurringUntil) continue;
-                    
-                    // Do not overwrite existing future tasks in the chain
-                    if (template.deadline >= dStr) continue;
+                // Move to the day after the last deadline
+                nextDate.setDate(nextDate.getDate() + 1);
 
-                    // Match specific recurring days if selected
-                    if (template.recurringDays && template.recurringDays.length > 0 && !template.recurringDays.includes(targetDate.getDay())) continue;
+                // If the calculated next date is still in the past, bring it to today
+                const [ty, tm, td] = today.split('-').map(Number);
+                const todayDate = new Date(ty, tm - 1, td);
+                if (nextDate < todayDate) {
+                    nextDate = new Date(todayDate);
+                }
 
-                    const exists = app.data.some(t => t.title === template.title && t.deadline === dStr);
-                    if (!exists) {
-                        const newTask = JSON.parse(JSON.stringify(template));
-                        newTask.id = 'id_' + Date.now().toString() + Math.random().toString(36).substr(2, 5) + i;
-                        newTask.deadline = dStr;
-                        newTask.start = dStr; // FIX: Prevents tasks from instantly becoming "Stagnant"
-                        newTask.completed = false;
-                        newTask.failed = false;
-                        newTask.partial = false;
-                        newTask.completedAt = null;
-                        newTask.failReason = null; // FIX: Wipe failure excuse from previous template
-                        newTask.history = [];
-                        if (Array.isArray(newTask.checklist)) newTask.checklist.forEach(c => c.done = false);
-                        if (Array.isArray(newTask.subtasks)) newTask.subtasks.forEach(c => c.done = false);
-                        app.data.push(newTask);
-                        modified = true;
+                // Advance until it matches a selected recurring day (max 14 days to prevent infinite loop)
+                let failsafe = 0;
+                while (failsafe < 14) {
+                    if (!template.recurringDays || template.recurringDays.length === 0 || template.recurringDays.includes(nextDate.getDay())) {
+                        break;
                     }
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    failsafe++;
+                }
+
+                const dStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
+                
+                if (template.recurringUntil && dStr > template.recurringUntil) return;
+
+                // Spawn the exact next occurrence
+                const exists = app.data.some(t => t.title === template.title && t.deadline === dStr);
+                if (!exists) {
+                    const newTask = JSON.parse(JSON.stringify(template));
+                    newTask.id = 'id_' + Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                    newTask.deadline = dStr;
+                    newTask.start = dStr; // Prevents tasks from instantly becoming "Stagnant"
+                    newTask.completed = false;
+                    newTask.failed = false;
+                    newTask.partial = false;
+                    newTask.completedAt = null;
+                    newTask.failReason = null; // Wipe failure excuse from previous template
+                    newTask.history = [];
+                    if (Array.isArray(newTask.checklist)) newTask.checklist.forEach(c => c.done = false);
+                    if (Array.isArray(newTask.subtasks)) newTask.subtasks.forEach(c => c.done = false);
+                    app.data.push(newTask);
+                    modified = true;
                 }
             });
 
