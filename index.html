@@ -2317,43 +2317,28 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 dopamine.textPop("OUTSTANDING!", "linear-gradient(to right, #a855f7, #7e22ce)");
             } 
             else if (roll < 97) {
-                // TIER 4: THE NEAR MISS (5% Drop Rate) - The Psychological Trap.
+                // TIER 4: THE NEAR MISS (5% Drop Rate)
                 dryStreak++; localStorage.setItem('zenith_dry_streak', dryStreak);
-                document.body.classList.add('brutal-punishment-active');
                 try { systemAudio.playTone(150, 'sawtooth', 1.0, 0.3); } catch(e) {}
                 
-                const el = document.createElement('div');
-                el.className = 'text-combo';
-                el.innerText = "ALMOST...";
-                el.style.color = "#64748b";
-                el.style.textShadow = "0 0 20px #0f172a";
-                el.style.position = 'fixed';
-                el.style.top = '50%'; el.style.left = '50%';
-                el.style.zIndex = '99999';
-                document.body.appendChild(el);
-                
-                setTimeout(() => {
-                    document.body.classList.remove('brutal-punishment-active');
-                    el.remove();
-                }, 1000);
+                // FIX: Completely removed the buggy "ALMOST..." text overlay. 
+                // Replaced with a clean, sharp shattered glass animation.
+                if (typeof dopamine.shatteredGlass === 'function') {
+                    dopamine.shatteredGlass();
+                } else {
+                    dopamine.basic();
+                }
             }
             else {
-                // TIER 5: MYTHIC JACKPOT (3% Drop Rate) - Sensory overload.
+                // TIER 5: MYTHIC JACKPOT (3% Drop Rate)
                 dryStreak = 0; localStorage.setItem('zenith_dry_streak', dryStreak);
-                document.body.classList.add('glitch-tear');
-                setTimeout(() => document.body.classList.remove('glitch-tear'), 400);
                 
                 dopamine.mythicExplosion();
                 try { systemAudio.playTone(300, 'sawtooth', 1.5, 0.2); } catch(e) {}
                 
-                const el = document.createElement('div');
-                el.className = 'text-godlike';
-                el.innerText = "GODLIKE EXECUTION";
-                el.style.position = 'fixed';
-                el.style.top = '50%'; el.style.left = '50%';
-                el.style.zIndex = '99999';
-                document.body.appendChild(el);
-                setTimeout(() => el.remove(), 2500);
+                // FIX: Removed the clunky, uncentered DOM element. 
+                // Uses the standardized, clean fading textPop instead.
+                dopamine.textPop("GODLIKE", "linear-gradient(to right, #fbbf24, #f59e0b)");
             }
         },
 
