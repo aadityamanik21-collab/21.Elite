@@ -2278,72 +2278,47 @@ html.dark .boot-status, html.growth-mode .boot-status {
         // Redirects execution commands back to the clean, singular trigger
         execute: (priority) => { dopamine.trigger(); }, 
         
-        trigger: () => {
+                trigger: () => {
             if (typeof confetti === 'undefined') return;
 
-            // THE GACHA ENGINE (PITY TIMER)
-            let dryStreak = parseInt(localStorage.getItem('zenith_dry_streak') || '0');
-            let roll = Math.random() * 100; 
+            // 1. Play a satisfying system sound every time
+            try { systemAudio.click(); } catch(e) {}
 
-            // Rig the odds if they are getting bored
-            if (dryStreak >= 8) roll = 98; // Guaranteed Mythic Jackpot after 8 dry pulls
-            else if (dryStreak >= 5) roll = 90; // Guaranteed Epic after 5 dry pulls
+            // 2. Gather all of your clean, unique animations into a pool
+            const animations = [
+                dopamine.basic,
+                dopamine.epicBurst,
+                dopamine.sideCannons,
+                dopamine.fountain,
+                dopamine.starShower,
+                dopamine.matrixRain,
+                dopamine.sonicBoom,
+                dopamine.cherryBlossom,
+                dopamine.neonPulse,
+                dopamine.antiGravity,
+                dopamine.shatteredGlass,
+                dopamine.supernova
+            ].filter(fn => typeof fn === 'function'); // Failsafe to ensure the function exists
 
-            if (roll < 55) {
-                // TIER 1: COMMON (55% Drop Rate) - Sterile and cold.
-                dryStreak++; localStorage.setItem('zenith_dry_streak', dryStreak);
-                try { systemAudio.click(); } catch(e) {}
-                const popup = document.getElementById('success-popup');
-                if(popup) {
-                    popup.innerHTML = '<h2 class="text-lg font-black text-slate-500">Logged.</h2>';
-                    popup.style.borderColor = '#e2e8f0';
-                    popup.classList.add('active');
-                    setTimeout(() => popup.classList.remove('active'), 800);
-                }
-            } 
-            else if (roll < 80) {
-                // TIER 2: RARE (25% Drop Rate) - Standard positive reinforcement.
-                dryStreak++; localStorage.setItem('zenith_dry_streak', dryStreak);
-                dopamine.basic();
-                try { systemAudio.click(); } catch(e) {}
-                dopamine.textPop("SOLID.", "linear-gradient(to right, #38bdf8, #0ea5e9)");
-            } 
-            else if (roll < 92) {
-                // TIER 3: EPIC (12% Drop Rate) - Clean burst.
-                dryStreak = 0; localStorage.setItem('zenith_dry_streak', dryStreak);
-                dopamine.epicBurst();
-                dopamine.goldenFlash();
-                try { systemAudio.awaken(); } catch(e) {}
-                dopamine.textPop("OUTSTANDING!", "linear-gradient(to right, #a855f7, #7e22ce)");
-            } 
-            else if (roll < 97) {
-                // TIER 4: THE NEAR MISS (5% Drop Rate)
-                dryStreak++; localStorage.setItem('zenith_dry_streak', dryStreak);
-                try { systemAudio.playTone(150, 'sawtooth', 1.0, 0.3); } catch(e) {}
-                
-                // FIX: Completely removed the buggy "ALMOST..." text overlay. 
-                // Replaced with a clean, sharp shattered glass animation.
-                if (typeof dopamine.shatteredGlass === 'function') {
-                    dopamine.shatteredGlass();
-                } else {
-                    dopamine.basic();
-                }
+            // 3. Fire a random animation EVERY single time you complete a task
+            if (animations.length > 0) {
+                const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+                randomAnim();
+            } else {
+                // Ultimate fallback just in case
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true });
             }
-            else {
-                // TIER 5: MYTHIC JACKPOT (3% Drop Rate)
-                dryStreak = 0; localStorage.setItem('zenith_dry_streak', dryStreak);
-                
-                dopamine.mythicExplosion();
-                try { systemAudio.playTone(300, 'sawtooth', 1.5, 0.2); } catch(e) {}
-                
-                // FIX: Removed the clunky, uncentered DOM element. 
-                // Uses the standardized, clean fading textPop instead.
-                dopamine.textPop("GODLIKE", "linear-gradient(to right, #fbbf24, #f59e0b)");
+
+            // 4. Show a quick text pop 30% of the time (keeps it satisfying but not visually exhausting)
+            if (Math.random() > 0.7 && typeof dopamine.textPop === 'function') {
+                const praises = ["LOGGED.", "SOLID.", "DONE.", "NICE.", "BOOM."];
+                const text = praises[Math.floor(Math.random() * praises.length)];
+                dopamine.textPop(text, "linear-gradient(to right, #38bdf8, #0ea5e9)");
             }
         },
 
         // 1. Basic (Clean Confetti)
-        basic: () => confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true }),
+   basic: () => confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true }),
 
         // 2. Epic Burst (Replaces buggy fireworks)
         epicBurst: () => {
