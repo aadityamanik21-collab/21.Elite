@@ -2931,74 +2931,50 @@ html.dark .boot-status, html.growth-mode .boot-status {
         const gridLineColor = isSystem ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
         const textColor = isSystem ? '#94a3b8' : '#64748b';
 
-        setTimeout(() => {
-            app.renderChart('sleep-chart', 'bar', {
-                labels: dates,
-                datasets: [
-                    {
-                        type: 'line',
-                        label: 'Rolling Avg',
-                        data: movingAverages,
-                        borderColor: isSystem ? 'rgba(167, 139, 250, 0.8)' : 'rgba(139, 92, 246, 0.8)', // Scientific Purple line
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.4,
-                        fill: false
-                    },
-                    {
-                        type: 'line',
-                        label: 'Baseline (7h)',
-                        data: dates.map(() => 7),
-                        borderColor: isSystem ? '#64748b' : '#94a3b8',
-                        borderDash: [4, 4],
-                        pointRadius: 0,
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0
-                    },
-                    {
-                        type: 'bar',
-                        label: 'Volume (Hrs)',
-                        data: durations,
-                        backgroundColor: barColors,
-                        borderColor: borderColors,
-                        borderWidth: 1,
-                        borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
-                        barPercentage: 0.6
-                    }
-                ]
-            }, { 
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: textColor, font: { size: 9, family: 'monospace' } }
-                    },
-                    y: { 
-                        beginAtZero: true,
-                        suggestedMax: Math.max(10, Math.max(...durations) + 2), 
-                        ticks: { stepSize: 2, color: textColor, font: { size: 9, family: 'monospace' } },
-                        grid: { color: gridLineColor, borderDash: [4, 4], drawBorder: false }
-                    }
-                },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                if (context.dataset.label === 'Baseline (7h)') return null; // Hide static baseline from hover
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed.y !== null) label += context.parsed.y + 'h';
-                                return label;
-                            }
-                        }
-                    }
-                } 
-            });
-        }, 150);
-    },
+                        setTimeout(() => {
+                    const chartCtx = document.getElementById('sleep-chart').getContext('2d');
+                    let gradient = chartCtx.createLinearGradient(0, 0, 0, 200);
+                    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)'); // Green glow top
+                    gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)'); // Transparent bottom
 
+                    app.renderChart('sleep-chart', 'line', {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Hours Slept',
+                            data: durations,
+                            borderColor: '#22c55e', // Tailwind green-500
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4, // Smooth curve
+                            pointBackgroundColor: isSystem ? '#09090b' : '#ffffff',
+                            pointBorderColor: '#22c55e',
+                            pointBorderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#22c55e',
+                            pointHoverBorderColor: '#fff'
+                        }]
+                    }, {
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { 
+                                grid: { display: false, drawBorder: false }, 
+                                ticks: { color: textColor, font: { size: 9, family: 'monospace' }, maxTicksLimit: 7 } 
+                            },
+                            y: { 
+                                beginAtZero: true, 
+                                suggestedMax: Math.max(10, Math.max(...durations) + 2), 
+                                ticks: { stepSize: 2, color: textColor, font: { size: 9, family: 'monospace' } }, 
+                                grid: { color: gridLineColor, borderDash: [4, 4], drawBorder: false } 
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' hrs'; } } }
+                        }
+                    });
+                }, 150);
 
 
 
