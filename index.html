@@ -4090,7 +4090,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
             }
         },
             
-                                                                    processRecurringTasks: () => {
+                                                                            processRecurringTasks: () => {
             if (!app.data) return;
             const today = app.getLocalISO();
             let modified = false;
@@ -4107,31 +4107,27 @@ html.dark .boot-status, html.growth-mode .boot-status {
             Object.values(uniqueRecurring).forEach(template => {
                 if (template.recurringUntil && today > template.recurringUntil) return;
 
-                // Safely parse today's date to avoid timezone shifting
                 const [ty, tm, td] = today.split('-').map(Number);
                 const todayDate = new Date(ty, tm - 1, td);
 
-                // Stop if there is already an unfinished active occurrence (prevents duplicate spam)
                 const hasActive = app.data.some(t => t.title === template.title && t.recurring === true && !t.completed && !t.failed && !t.partial);
                 if (hasActive) return;
 
-                // Prevent the instant "respawn after completion" bug. If you executed one today, it waits until the next valid day.
-                const executedToday = app.data.some(t => t.title === template.title && t.recurring === true && ((t.completedAt && t.completedAt.startsWith(today)) || t.deadline === today));
+                // FIX: Force String() conversion to prevent "startsWith is not a function" crashes
+                const executedToday = app.data.some(t => t.title === template.title && t.recurring === true && ((t.completedAt && String(t.completedAt).startsWith(today)) || t.deadline === today));
                 if (executedToday) return;
 
-                // Check if today exactly matches the designated recurring days (if any are selected)
                 if (template.recurringDays && template.recurringDays.length > 0 && !template.recurringDays.includes(todayDate.getDay())) return;
 
-                // If all checks pass, spawn the task exclusively for today
                 const newTask = JSON.parse(JSON.stringify(template));
                 newTask.id = 'id_' + Date.now().toString() + Math.random().toString(36).substr(2, 5);
                 newTask.deadline = today;
-                newTask.start = today; // Prevents the stagnant/overdue bug on spawn
+                newTask.start = today; 
                 newTask.completed = false;
                 newTask.failed = false;
                 newTask.partial = false;
                 newTask.completedAt = null;
-                newTask.failReason = null; // Wipes old excuses from the template
+                newTask.failReason = null; 
                 newTask.history = [];
                 if (Array.isArray(newTask.checklist)) newTask.checklist.forEach(c => c.done = false);
                 if (Array.isArray(newTask.subtasks)) newTask.subtasks.forEach(c => c.done = false);
@@ -4141,7 +4137,6 @@ html.dark .boot-status, html.growth-mode .boot-status {
 
             if (modified) app.save();
         },
-
         renderList: () => {
             // FIX: Fire the recurring engine BEFORE rendering the list. 
             // This guarantees midnight rollovers work even if the app was left open overnight!
@@ -4671,85 +4666,122 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     app.updateStreakDisplay();
                 }
             },
-                        renderVault: () => {
-                const list = document.getElementById('vault-list'); list.innerHTML = '';
+                                renderVault: () => {
+            try {
+                const list = document.getElementById('vault-list');
+                list.innerHTML = '';
                 const title = document.getElementById('vault-title');
                 const backBtn = document.getElementById('vault-back-btn');
-
+                
                 if (!app.currVaultParent) {
-                    title.innerText = "Root Categories"; backBtn.classList.add('hidden');
+                    title.innerText = "Root Categories";
+                    backBtn.classList.add('hidden');
                     let foundAny = false;
-
-                    app.projectGroups.forEach(grp => {
-                        // LIFETIME FIX: Cap Vault rendering to the latest 100 items per category
-                        const items = app.data.filter(x => x.completed && !x.partial && !x.parentId && x.type !== 'event' && (x.group || 'General') === grp)
-                            .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 100);
+                    
+                    (app.projectGroups || ['General']).forEach(grp => {
+                        const items = (app.data || []).filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && (x.group || 'General') === grp)
+                                      .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 100);
                         if (items.length > 0) {
                             foundAny = true;
-                            list.innerHTML += `<div class="group-header bg-green-50 border-green-200 mt-4"><span class="group-title text-green-700">${grp}</span></div>`;
-                            items.forEach(i => list.appendChild(app.createVaultNode(i)));
+                            list.innerHTML += `<div class="group-header bg-green-50 border-green-200 mt-4"><span class="group-title text-green-700">${escapeHTML(grp)}</span></div>`;
+                            items.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
                         }
                     });
                     
-                    const orphans = app.data.filter(x => x.completed && !x.partial && !x.parentId && x.type !== 'event' && !app.projectGroups.includes(x.group || 'General'));
+                    const orphans = (app.data || []).filter(x => x && x.completed && !x.partial && !x.parentId && x.type !== 'event' && !(app.projectGroups || []).includes(x.group || 'General'));
                     if(orphans.length > 0) {
                         foundAny = true;
                         list.innerHTML += `<div class="group-header bg-green-50 border-green-200 mt-4"><span class="group-title text-green-700">Unsorted</span></div>`;
-                        orphans.forEach(i => list.appendChild(app.createVaultNode(i)));
+                        orphans.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
                     }
 
-                    // The Graveyard of Half-Measures (Pulls ALL partials, destroying hierarchy)
-                    const partials = app.data.filter(x => x.completed && x.partial && x.type !== 'event')
-                                            .sort((a,b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+                    const partials = (app.data || []).filter(x => x && x.completed && x.partial && x.type !== 'event')
+                                    .sort((a,b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
                     
                     if(partials.length > 0) {
                         foundAny = true;
                         list.innerHTML += `<div class="mt-8 border-t-2 border-dashed border-slate-300 pt-4"><div class="group-header bg-slate-200 border-slate-300"><span class="group-title text-slate-600"><i class="fas fa-battery-half mr-2"></i>Half-Measures (Given Up)</span></div></div>`;
-                        partials.forEach(i => list.appendChild(app.createDullVaultNode(i)));
+                        partials.forEach(i => { try { list.appendChild(app.createDullVaultNode(i)); } catch(e){} });
                     }
 
                     if (!foundAny) list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">The Vault is empty. Get to work.</div>`;
-
                 } else {
-                    const parent = app.data.find(x => x.id === app.currVaultParent);
-                    title.innerText = parent ? parent.title : "Items"; backBtn.classList.remove('hidden');
+                    const parent = (app.data || []).find(x => x && x.id === app.currVaultParent);
+                    title.innerText = parent ? parent.title : "Items";
+                    backBtn.classList.remove('hidden');
                     
-                    const items = app.data.filter(x => x.completed && !x.partial && x.parentId === app.currVaultParent && x.type !== 'event');
-                    const partials = app.data.filter(x => x.completed && x.partial && x.parentId === app.currVaultParent && x.type !== 'event');
+                    const items = (app.data || []).filter(x => x && x.completed && !x.partial && x.parentId === app.currVaultParent && x.type !== 'event');
+                    const partials = (app.data || []).filter(x => x && x.completed && x.partial && x.parentId === app.currVaultParent && x.type !== 'event');
                     
                     if(items.length === 0 && partials.length === 0) {
                         list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">No completed sub-items.</div>`;
                     } else {
-                        items.forEach(i => list.appendChild(app.createVaultNode(i)));
+                        items.forEach(i => { try { list.appendChild(app.createVaultNode(i)); } catch(e){} });
                         if (partials.length > 0) {
                             list.innerHTML += `<div class="mt-6 border-t border-slate-300 pt-4 mb-2"><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Abandoned Sub-Items</span></div>`;
-                            partials.forEach(i => list.appendChild(app.createDullVaultNode(i)));
+                            partials.forEach(i => { try { list.appendChild(app.createDullVaultNode(i)); } catch(e){} });
                         }
                     }
                 }
-            },
-            createVaultNode: (i) => {
-                const subCount = app.data.filter(x => x.parentId === i.id && x.completed && x.type !== 'event').length;
-                const el = document.createElement('div');
-                el.className = "bg-white p-4 rounded-xl border border-green-100 shadow-sm mb-2 flex items-center gap-4 cursor-pointer hover:bg-green-50 transition-colors";
-                el.onclick = () => app.vaultDrill(i.id);
-                el.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-inner shadow-green-700/50"><i class="fas fa-check text-xs"></i></div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-[9px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded uppercase">${i.type}</span>
-                                ${subCount > 0 ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><i class="fas fa-code-branch mr-1"></i>${subCount} nested</span>` : ''}
-                            </div>
-                            <button onclick="event.stopPropagation(); app.vaultRevive('${i.id}')" class="text-[9px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-500 px-2 py-1 rounded transition-colors border border-slate-200"><i class="fas fa-undo mr-1"></i> PULL BACK</button>
+            } catch(e) {
+                console.error("Vault UI Core Crash:", e);
+                document.getElementById('vault-list').innerHTML = `<div class="text-center text-red-500 mt-10 italic">Error rendering Vault. Refresh app.</div>`;
+            }
+        },
+
+        createVaultNode: (i) => {
+            const subCount = (app.data || []).filter(x => x.parentId === i.id && x.completed && x.type !== 'event').length;
+            const el = document.createElement('div');
+            el.className = "bg-white p-4 rounded-xl border border-green-100 shadow-sm mb-2 flex items-center gap-4 cursor-pointer hover:bg-green-50 transition-colors";
+            el.onclick = () => app.vaultDrill(i.id);
+            const safeTime = i.completedAt ? String(i.completedAt).split('T')[0] : 'Unknown';
+            el.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-inner shadow-green-700/50"><i class="fas fa-check text-xs"></i></div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded uppercase">${i.type || 'task'}</span>
+                            ${subCount > 0 ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><i class="fas fa-code-branch mr-1"></i>${subCount} nested</span>` : ''}
                         </div>
-                        <h3 class="font-bold text-slate-700">${escapeHTML(i.title)}</h3>
-                        <div class="text-[10px] text-slate-400 font-mono mt-1">Completed: ${i.completedAt ? i.completedAt.split('T')[0] : 'Unknown'}</div>
+                        <button onclick="event.stopPropagation(); app.vaultRevive('${i.id}')" class="text-[9px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-500 px-2 py-1 rounded transition-colors border border-slate-200"><i class="fas fa-undo mr-1"></i> PULL BACK</button>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-300 ml-1"></i>
-                `;
-                return el;
-            },
+                    <h3 class="font-bold text-slate-700">${escapeHTML(i.title || 'Unknown')}</h3>
+                    <div class="text-[10px] text-slate-400 font-mono mt-1">Completed: ${safeTime}</div>
+                </div>
+                <i class="fas fa-chevron-right text-slate-300 ml-1"></i>
+            `;
+            return el;
+        },
+
+        createDullVaultNode: (i) => {
+            const subCount = (app.data || []).filter(x => x.parentId === i.id && x.type !== 'event').length;
+            let parentContext = '';
+            if (i.parentId) {
+                const p = (app.data || []).find(x => x.id === i.parentId);
+                if (p) parentContext = `<div class="text-[9px] text-slate-500 uppercase tracking-widest mt-1"><i class="fas fa-level-up-alt mr-1"></i>Abandoned from: ${escapeHTML(p.title || 'Unknown')}</div>`;
+            }
+            const el = document.createElement('div');
+            el.className = "vault-dull-card p-4 rounded-xl mb-2 flex items-center gap-4 cursor-pointer transition-colors";
+            el.onclick = () => app.vaultDrill(i.id);
+            const safeTime = i.completedAt ? String(i.completedAt).split('T')[0] : 'Unknown';
+            el.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-slate-300 text-slate-500 flex items-center justify-center shadow-inner"><i class="fas fa-minus text-xs"></i></div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-bold bg-slate-300 text-slate-600 px-2 py-0.5 rounded uppercase">PARTIAL</span>
+                            ${subCount > 0 ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded"><i class="fas fa-code-branch mr-1"></i>${subCount} nested</span>` : ''}
+                        </div>
+                        <button onclick="event.stopPropagation(); app.vaultRevive('${i.id}')" class="text-[9px] font-bold bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded transition-colors border border-slate-300"><i class="fas fa-undo mr-1"></i> TRY AGAIN</button>
+                    </div>
+                    <h3 class="font-bold text-slate-500 line-through decoration-slate-400">${escapeHTML(i.title || 'Unknown')}</h3>
+                    ${parentContext}
+                    <div class="text-[10px] text-slate-400 font-mono mt-1">Given up: ${safeTime}</div>
+                </div>
+                <i class="fas fa-chevron-right text-slate-300 ml-1"></i>
+            `;
+            return el;
+        },
 
             // --- CALENDAR & BOARD ---
            
