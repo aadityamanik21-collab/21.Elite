@@ -2124,7 +2124,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
         },
 
         // --- NEW: QUEST EXECUTION ENGINE ---
-        completeTask: (id) => {
+                completeTask: (id) => {
             const i = app.data.find(x => x.id === id);
             if (i) {
                 const pendingChildren = app.data.filter(x => x.parentId === id && x.type !== 'event' && !x.completed && !x.failed);
@@ -2133,7 +2133,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     return;
                 }
                 
-                i.completed = true; i.failed = false; i.completedAt = app.getLocalISO();
+                i.completed = true; 
+                i.failed = false; 
+                i.completedAt = app.getLocalISO();
+                delete i.partial; // FIX: Wipes out the "Give Up" curse
+                
                 app.save(); app.updateStreakDisplay();
                 
                 if(typeof dopamine !== 'undefined') dopamine.execute(i.priority);
@@ -2143,6 +2147,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 if(!document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
             }
         },
+
 
         completeMarker: (mId) => {
             const today = app.getLocalISO();
@@ -3908,97 +3913,105 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     app.renderList();
                 }
             },
-            toggle: (id) => { 
-                const i = app.data.find(x => x.id === id); 
-                if(i) { 
-                    if (i.parentId && i.completed) {
-                        const parent = app.data.find(x => x.id === i.parentId);
-                        if (parent && parent.completed) return alert("DENIED. The parent objective is already sealed. Revert the parent before altering this sub-item.");
-                    }
-                    if (!i.completed) {
-                        const pendingChildren = app.data.filter(x => x.parentId === id && x.type !== 'event' && !x.completed && !x.failed);
-                        if (pendingChildren.length > 0) {
-                            alert(`DENIED. You cannot complete "${escapeHTML(i.title)}" until its ${pendingChildren.length} pending sub-items are finished or logged as failed.`);
-                            return;
-                        }
-                    }
-
-                    // Execution State Swap
-                    i.completed = !i.completed; 
-                    if(i.completed) i.failed = false; 
-                    i.completed ? i.completedAt = app.getLocalISO() : delete i.completedAt; 
-                    app.save(); app.updateStreakDisplay(); 
-                    
-                    if(i.completed && i.type !== 'event') {
-                        if(document.documentElement.classList.contains('growth-mode')) {
-                            coreSystem.triggerAlert(`You have acquired the qualifications of completion for [${escapeHTML(i.title)}]. Will you accept?`, true, () => {
-                                dopamine.execute(i.priority);
-                            });
-                        } else {
-                            dopamine.execute(i.priority); 
-                        }
-                    } else if (!i.completed && i.type !== 'event') {
-                        // ANTI-FRAUD TRIGGER
-                        dopamine.punish("FRAUDULENT REVERSAL.");
-                    }
-                    
-                    if(!document.getElementById('view-list').classList.contains('hidden')) app.renderList(); 
-                } 
-            },
-
-
-                        toggleFail: (id) => {
-                const i = app.data.find(x => x.id === id);
-                if(i) {
-                    if (!i.failed) {
-                        const reason = prompt("State your reason for failure. Be brutally honest:");
-                        if (reason === null) return; // Cancelled
-                        i.failed = true;
-                        i.failReason = reason.trim() === "" ? "No excuse provided." : reason;
-                        i.completed = false; 
-                        delete i.completedAt;
-                        
-                        // Cascade failure to active children to prevent stat corruption
-                        const cascadeFail = (pid) => {
-                            app.data.filter(x => x.parentId === pid && !x.completed).forEach(child => {
-                                child.failed = true;
-                                child.failReason = "Parent objective failed.";
-                                cascadeFail(child.id);
-                            });
-                        };
-                        cascadeFail(id);
-                        dopamine.punish();
-                        if(document.documentElement.classList.contains('growth-mode')) {
-                            systemAudio.error();
-                            systemAudio.speak("Warning. Objective failed. Penalty zone approaching.");
-                        }
-                    } else {
-                        // Reverting failed state
-                        i.failed = false;
-                        delete i.failReason;
-                    }
-                    app.save(); 
-                    app.renderList();
-                    if(document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
+                    toggle: (id) => {
+            const i = app.data.find(x => x.id === id);
+            if(i) {
+                if (i.parentId && i.completed) {
+                    const parent = app.data.find(x => x.id === i.parentId);
+                    if (parent && parent.completed) return alert("DENIED. The parent objective is already sealed. Revert the parent before altering this sub-item.");
                 }
-            },
-          
-              reviveTask: (id) => {
-                const i = app.data.find(x => x.id === id);
-                if(i && i.failed) {
-                    if (i.parentId) {
-                        const parent = app.data.find(x => x.id === i.parentId);
-                        if (parent && parent.completed) return alert("DENIED. The parent objective is sealed. Revive the parent first.");
+                if (!i.completed) {
+                    const pendingChildren = app.data.filter(x => x.parentId === id && x.type !== 'event' && !x.completed && !x.failed);
+                    if (pendingChildren.length > 0) {
+                        alert(`DENIED. You cannot complete "${escapeHTML(i.title)}" until its ${pendingChildren.length} pending sub-items are finished or logged as failed.`);
+                        return;
                     }
+                }
+                
+                // Execution State Swap
+                i.completed = !i.completed;
+                if(i.completed) {
+                    i.failed = false;
+                    i.completedAt = app.getLocalISO();
+                    delete i.partial; // FIX: Wipes out the "Give Up" curse upon completion
+                } else {
+                    delete i.completedAt;
+                    delete i.partial; // FIX: Wipes curse upon revival
+                }
+                
+                app.save();
+                app.updateStreakDisplay();
+                
+                if(i.completed && i.type !== 'event') {
+                    if(document.documentElement.classList.contains('growth-mode')) {
+                        coreSystem.triggerAlert(`You have acquired the qualifications of completion for [${escapeHTML(i.title)}]. Will you accept?`, true, () => { dopamine.execute(i.priority); });
+                    } else {
+                        dopamine.execute(i.priority);
+                    }
+                } else if (!i.completed && i.type !== 'event') {
+                    // ANTI-FRAUD TRIGGER
+                    dopamine.punish("FRAUDULENT REVERSAL.");
+                }
+                if(!document.getElementById('view-list').classList.contains('hidden')) app.renderList();
+            }
+        },
+
+        toggleFail: (id) => {
+            const i = app.data.find(x => x.id === id);
+            if(i) {
+                if (!i.failed) {
+                    const reason = prompt("State your reason for failure. Be brutally honest:");
+                    if (reason === null) return; // Cancelled
+                    i.failed = true;
+                    i.failReason = reason.trim() === "" ? "No excuse provided." : reason;
+                    i.completed = false;
+                    delete i.completedAt;
+                    delete i.partial; // FIX: Wipes curse upon failure
+                    
+                    // Cascade failure to active children to prevent stat corruption
+                    const cascadeFail = (pid) => {
+                        app.data.filter(x => x.parentId === pid && !x.completed).forEach(child => {
+                            child.failed = true;
+                            child.failReason = "Parent objective failed.";
+                            delete child.partial;
+                            cascadeFail(child.id);
+                        });
+                    };
+                    cascadeFail(id);
+
+                    dopamine.punish();
+                    if(document.documentElement.classList.contains('growth-mode')) {
+                        systemAudio.error();
+                        systemAudio.speak("Warning. Objective failed. Penalty zone approaching.");
+                    }
+                } else {
+                    // Reverting failed state
                     i.failed = false;
                     delete i.failReason;
-                    app.save();
-                    app.renderList();
-                    if(document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
-                    if(!document.getElementById('view-calendar').classList.contains('hidden')) app.renderQuarterlyBoard();
+                    delete i.partial;
                 }
-            },
-            
+                app.save();
+                app.renderList();
+                if(document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
+            }
+        },
+
+        reviveTask: (id) => {
+            const i = app.data.find(x => x.id === id);
+            if(i && i.failed) {
+                if (i.parentId) {
+                    const parent = app.data.find(x => x.id === i.parentId);
+                    if (parent && parent.completed) return alert("DENIED. The parent objective is sealed. Revive the parent first.");
+                }
+                i.failed = false;
+                delete i.failReason;
+                delete i.partial; // FIX: Clean state wipe
+                app.save();
+                app.renderList();
+                if(document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
+                if(!document.getElementById('view-calendar').classList.contains('hidden')) app.renderQuarterlyBoard();
+            }
+        },
             
             triggerSuccessAnimation: () => {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -4006,25 +4019,31 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 popup.classList.add('active');
                 setTimeout(() => popup.classList.remove('active'), 2000);
             },
-                        delItem: (id) => { 
-                if(!confirm('Move to Recycle Bin?')) return; 
-                const toDelete = [];
-                const rootItem = app.data.find(x => x.id === id);
-                if(!rootItem) return;
-                
-                const rec = (pid) => { 
-                    app.data.filter(x => x.parentId === pid).forEach(k => rec(k.id)); 
-                    const item = app.data.find(x => x.id === pid);
-                    if(item) {
-                        toDelete.push(item);
-                        app.data = app.data.filter(x => x.id !== pid); 
-                    }
-                }; 
-                rec(id); 
-                if (app.currParent === id) app.currParent = null;
-                app.trash.push({ tId: 'trash_' + Date.now(), type: 'task_batch', title: rootItem.title, items: toDelete, deletedAt: app.getLocalISO() });
-                app.save(); app.renderList(); 
-            },
+                                delItem: (id) => {
+            if(!confirm('Move to Recycle Bin?')) return;
+            const toDelete = [];
+            const rootItem = app.data.find(x => x.id === id);
+            if(!rootItem) return;
+            
+            // FIX: Safely collect all items depth-first before mutating the master array
+            const rec = (pid) => {
+                app.data.filter(x => x.parentId === pid).forEach(k => rec(k.id));
+                const item = app.data.find(x => x.id === pid);
+                if(item && !toDelete.some(x => x.id === item.id)) {
+                    toDelete.push(item);
+                }
+            };
+            rec(id);
+            
+            // Execute the deletion cleanly in one sweep
+            app.data = app.data.filter(x => !toDelete.some(td => td.id === x.id));
+            
+            if (app.currParent === id) app.currParent = null;
+            app.trash.push({ tId: 'trash_' + Date.now(), type: 'task_batch', title: rootItem.title, items: toDelete, deletedAt: app.getLocalISO() });
+            
+            app.save();
+            app.renderList();
+        },
 
             getLevel: (pid) => { if(!pid) return 'project'; const p=app.data.find(x=>x.id===pid); if(!p || p.type==='event') return 'subtask'; const i=app.hierarchy.indexOf(p.type); return (i!==-1 && i<app.hierarchy.length-1)?app.hierarchy[i+1]:'subtask'; },
             
