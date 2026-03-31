@@ -1762,6 +1762,15 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     <div id="field-start"><label class="text-[10px] font-bold text-slate-400 uppercase">Start</label><input type="date" id="inp-start" required class="w-full p-3 bg-slate-100 rounded-xl mt-1 text-xs font-bold outline-none"></div>
                     <div id="field-end"><label class="text-[10px] font-bold text-slate-400 uppercase" id="label-end">Due</label><input type="date" id="inp-end" required class="w-full p-3 bg-slate-100 rounded-xl mt-1 text-xs font-bold outline-none"></div>
                 </div>
+                    <div class="flex items-center justify-between mb-4 bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-200/50 dark:border-amber-700/30">
+                        <label class="text-[11px] font-bold text-amber-600 dark:text-amber-500 uppercase flex items-center gap-2">
+                            <i class="fas fa-star animate-pulse"></i> Mark as Special
+                        </label>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="inp-special" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
+                        </label>
+                    </div>
 
                 <div id="field-recurring" class="mb-5 bg-slate-800 border border-slate-700 rounded-xl shadow-inner overflow-hidden">
                     <div class="flex items-center justify-between p-4">
@@ -4380,8 +4389,8 @@ html.dark .boot-status, html.growth-mode .boot-status {
         }
 
         const el = document.createElement('div');
-        // FIX 1: Forced Pure Black in dark mode (`dark:!bg-black`) and ensured flex layout holds together
-        el.className = `p-4 mb-3 relative overflow-hidden flex flex-col bg-white dark:!bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm tap-scale draggable-item transition-colors duration-200 ${isStagnant ? 'border-orange-500/30 dark:border-orange-500/30 shadow-orange-500/5' : ''}`;
+        // UPGRADE: Added Special Glow logic, maintaining pure black base for dark mode
+        el.className = `p-4 mb-3 relative overflow-hidden flex flex-col bg-white dark:!bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm tap-scale draggable-item transition-all duration-300 ${isStagnant ? 'border-orange-500/30 dark:border-orange-500/30 shadow-orange-500/5' : ''} ${i.special && !i.completed ? 'ring-[1.5px] ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.25)] dark:shadow-[0_0_20px_rgba(251,191,36,0.15)] bg-gradient-to-br from-amber-500/10 to-transparent z-10 border-transparent dark:border-transparent' : ''}`;
         el.setAttribute('draggable', 'true');
         el.setAttribute('data-id', i.id);
         el.addEventListener('dragstart', app.handleDragStart);
@@ -4410,7 +4419,9 @@ html.dark .boot-status, html.growth-mode .boot-status {
             </div>
             
             <div class="flex-1 min-w-0 cursor-pointer" onclick="app.drill('${i.id}')">
-                <h3 class="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-white leading-snug break-words whitespace-normal ${i.completed ? 'line-through text-neutral-400 dark:text-neutral-600' : isFailed ? 'line-through text-red-400 dark:text-red-500/60' : ''}">${escapeHTML(i.title)}</h3>
+                <h3 class="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-white leading-snug break-words whitespace-normal ${i.completed ? 'line-through text-neutral-400 dark:text-neutral-600' : isFailed ? 'line-through text-red-400 dark:text-red-500/60' : ''}">
+                    ${i.special && !i.completed ? '<i class="fas fa-star text-amber-500 mr-2 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse"></i>' : ''}${escapeHTML(i.title)}
+                </h3>
                 
                 <div class="flex flex-wrap items-center gap-2 mt-1">
                     <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-1 shrink-0">
@@ -7885,6 +7896,7 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
                     if(document.getElementById('inp-trigger')) document.getElementById('inp-trigger').value = '';
                                     if(document.getElementById('inp-min-action')) document.getElementById('inp-min-action').value = '';
                 if(document.getElementById('inp-safety-net')) document.getElementById('inp-safety-net').value = '';
+                if(document.getElementById('inp-special')) document.getElementById('inp-special').checked = false;
                 if(document.getElementById('inp-recurring')) {
                     document.getElementById('inp-recurring').checked = false;
                     document.getElementById('recurring-until-wrapper').classList.add('hidden');
@@ -7915,7 +7927,10 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
                     if(document.getElementById('inp-trigger')) document.getElementById('inp-trigger').value = i.trigger || '';
                                     if(document.getElementById('inp-min-action')) document.getElementById('inp-min-action').value = i.minAction || '';
                 if(document.getElementById('inp-safety-net')) document.getElementById('inp-safety-net').value = i.safetyNet || '';
-                                if(document.getElementById('inp-recurring')) {
+                                if(document.getElementById('inp-special')) {
+                    document.getElementById('inp-special').checked = i.special || false;
+                }
+                if(document.getElementById('inp-recurring')) {
                     document.getElementById('inp-recurring').checked = i.recurring || false;
                     document.getElementById('recurring-until-wrapper').classList.toggle('hidden', !i.recurring);
                 }
@@ -7963,7 +7978,8 @@ ${t.failed ? `<div class="text-[9px] font-bold text-red-500 mt-0.5 truncate uppe
             link: document.getElementById('inp-link')?.value || '',
             recurring: document.getElementById('inp-recurring')?.checked || false,
             recurringUntil: document.getElementById('inp-recurring-until')?.value || '',
-            recurringDays: selectedDays.length > 0 ? selectedDays : null
+            recurringDays: selectedDays.length > 0 ? selectedDays : null,
+            special: document.getElementById('inp-special')?.checked || false
         };
 
                 
