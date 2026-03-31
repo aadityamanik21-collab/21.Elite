@@ -1708,67 +1708,17 @@ html.dark .boot-status, html.growth-mode .boot-status {
         </div>
     </div>
 
-    <button class="fab boot-enter delay-3" id="main-fab" style="display: none !important;" onclick="app.openModal('create')"><i class="fas fa-plus"></i></button>
+    <button class="fab boot-enter delay-3" id="main-fab" onclick="app.openModal('create')"><i class="fas fa-plus"></i></button>
 
 
-    <div class="modal-overlay" id="create-hub-modal" onclick="if(event.target===this) this.classList.remove('open')">
-        <div class="modal h-[85vh] flex flex-col relative dark:bg-slate-900">
-            <div class="flex justify-between items-center mb-6 shrink-0">
-                <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center" id="create-hub-title"><i class="fas fa-magic text-blue-500 mr-2"></i><span class="text-slate-800 dark:text-slate-100">Creation Hub</span></h3>
-                <button onclick="document.getElementById('create-hub-modal').classList.remove('open')" class="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:bg-slate-200 transition-colors"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="create-hub-menu" class="flex-1 overflow-y-auto scroller space-y-3">
-                <button onclick="app.startCreationFlow('plan')" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex items-center gap-4 text-left hover:bg-slate-100 transition-colors active:scale-95 shadow-sm">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-sitemap"></i></div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Master Plan</h4>
-                        <p class="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">Create a comprehensive plan using the entire system. Includes programs and routines.</p>
-                    </div>
-                </button>
-                
-                <button onclick="app.startCreationFlow('program')" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex items-center gap-4 text-left hover:bg-slate-100 transition-colors active:scale-95 shadow-sm">
-                    <div class="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-dumbbell"></i></div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Training Program</h4>
-                        <p class="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">Build a structured program with milestones and rewards.</p>
-                    </div>
-                </button>
+<div class="dock-container boot-enter-centered delay-3">
 
-                <button onclick="app.startCreationFlow('routine')" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex items-center gap-4 text-left hover:bg-slate-100 transition-colors active:scale-95 shadow-sm">
-                    <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-sync-alt"></i></div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Improvement Routine</h4>
-                        <p class="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">Engineer recurring behavioral habits and daily routines.</p>
-                    </div>
-                </button>
 
-                <div class="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
-                     <button onclick="document.getElementById('create-hub-modal').classList.remove('open'); app.openModal('create')" class="w-full bg-slate-800 dark:bg-slate-700 text-white p-4 rounded-xl flex items-center gap-4 text-left hover:bg-slate-700 transition-colors active:scale-95 shadow-md">
-                        <div class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center text-xl shrink-0"><i class="fas fa-check"></i></div>
-                        <div>
-                            <h4 class="font-bold text-white text-sm">Standard Target</h4>
-                            <p class="text-[10px] text-slate-300 mt-0.5 font-medium leading-tight">Add a quick one-off task or event.</p>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <div id="create-hub-flow" class="hidden flex-1 overflow-y-auto scroller px-1">
-            </div>
-        </div>
-    </div>
-
-    <div class="dock-container boot-enter-centered delay-3">
         <button onclick="app.switchTab('list')" class="dock-btn active" id="btn-list"><i class="fas fa-stream"></i><span class="dock-lbl">PLAN</span></button>
         <button onclick="app.switchTab('calendar')" class="dock-btn" id="btn-calendar"><i class="far fa-calendar-alt"></i><span class="dock-lbl">SCHEDULE</span></button>
-        
-        <button onclick="app.openCreateHub()" class="shrink-0 w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-500 active:scale-95 transition-all transform -translate-y-3 border-[3px] border-[#f8fafc] dark:border-[#09090b] z-50">
-            <i class="fas fa-plus text-xl"></i>
-        </button>
-
         <button onclick="app.switchTab('journal')" class="dock-btn" id="btn-journal"><i class="fas fa-feather-alt"></i><span class="dock-lbl">LOG</span></button>
-        <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
+                <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
+
     </div>
 
     <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this) app.closeModal()">
@@ -3193,200 +3143,17 @@ html.dark .boot-status, html.growth-mode .boot-status {
             calendarViewMode: 'month',
             trackMode: 'list',
 
-                downloadSVG: (svgData, filename) => {
-        const blob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename || "flowchart.svg";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    },
-
-    openCreateHub: () => {
-        document.getElementById('create-hub-title').innerHTML = `<i class="fas fa-magic text-blue-500 mr-2"></i><span class="text-slate-800 dark:text-slate-100">Creation Hub</span>`;
-        document.getElementById('create-hub-flow').classList.add('hidden');
-        document.getElementById('create-hub-menu').classList.remove('hidden');
-        document.getElementById('create-hub-modal').classList.add('open');
-    },
-
-    startCreationFlow: (type) => {
-        document.getElementById('create-hub-menu').classList.add('hidden');
-        const flowContainer = document.getElementById('create-hub-flow');
-        flowContainer.classList.remove('hidden');
-        
-        let title = '';
-        let html = '';
-        
-        if (type === 'plan') {
-            title = 'Master Plan Builder';
-            html = `
-                <div class="space-y-5 pb-10 mt-2">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900 shadow-sm">
-                        <h4 class="font-bold text-blue-800 dark:text-blue-400 text-sm mb-1">1. The Core Objective</h4>
-                        <p class="text-[10px] text-blue-600 dark:text-blue-500 mb-3">Define the main goal you want to achieve.</p>
-                        <input type="text" id="flow-plan-title" placeholder="Plan Title" class="w-full p-3 rounded-lg bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-xs font-bold outline-none mb-2 text-slate-800 dark:text-slate-200 focus:border-blue-500 shadow-inner">
-                        <div class="flex gap-2">
-                            <div class="flex-1"><label class="text-[9px] font-bold text-blue-500 uppercase">Deadline</label><input type="date" id="flow-plan-deadline" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-blue-500 shadow-inner"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900 shadow-sm">
-                        <h4 class="font-bold text-indigo-800 dark:text-indigo-400 text-sm mb-1">2. System Engineering</h4>
-                        <p class="text-[10px] text-indigo-600 dark:text-indigo-500 mb-3">Who do you need to become? What is your trigger?</p>
-                        <input type="text" id="flow-plan-identity" placeholder="Identity (e.g. I am an Athlete)" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-xs font-bold outline-none mb-2 text-slate-800 dark:text-slate-200 focus:border-indigo-500 shadow-inner">
-                        <input type="text" id="flow-plan-trigger" placeholder="Trigger (e.g. After I wake up...)" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-xs font-bold outline-none mb-2 text-slate-800 dark:text-slate-200 focus:border-indigo-500 shadow-inner">
-                    </div>
-
-                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-900 shadow-sm">
-                        <h4 class="font-bold text-purple-800 dark:text-purple-400 text-sm mb-1">3. Training Program (Optional)</h4>
-                        <p class="text-[10px] text-purple-600 dark:text-purple-500 mb-3">Create a reward system for milestones in this plan.</p>
-                        <input type="text" id="flow-plan-reward" placeholder="Reward (e.g. Cheat Meal)" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 text-xs font-bold outline-none mb-2 text-slate-800 dark:text-slate-200 focus:border-purple-500 shadow-inner">
-                    </div>
-
-                    <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900 shadow-sm">
-                        <h4 class="font-bold text-emerald-800 dark:text-emerald-400 text-sm mb-1">4. Improvement Routines</h4>
-                        <p class="text-[10px] text-emerald-600 dark:text-emerald-500 mb-3">Add 1-2 daily recurring habits to support this plan.</p>
-                        <input type="text" id="flow-plan-habit1" placeholder="Daily Habit 1" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-xs font-bold outline-none mb-2 text-slate-800 dark:text-slate-200 focus:border-emerald-500 shadow-inner">
-                        <input type="text" id="flow-plan-habit2" placeholder="Daily Habit 2" class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-emerald-500 shadow-inner">
-                    </div>
-
-                    <button onclick="app.executePlanFlow()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 active:scale-95 transition-transform mt-2">INITIALIZE PLAN</button>
-                </div>
-            `;
-        } else if (type === 'program') {
-            title = 'Training Program';
-            html = `
-                <div class="space-y-5 pb-10 mt-2">
-                    <p class="text-xs text-slate-500 font-medium">Build a structured program with milestones and rewards.</p>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Program Name</label><input type="text" id="flow-prog-title" class="w-full p-3 bg-slate-50 dark:bg-slate-800 shadow-inner rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-purple-500 mt-1"></div>
-                    <div class="grid grid-cols-2 gap-3 mt-1">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">Reward</label><input type="text" id="flow-prog-reward" class="w-full p-3 bg-slate-50 dark:bg-slate-800 shadow-inner rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-purple-500 mt-1"></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">Milestone (%)</label><input type="number" id="flow-prog-milestone" value="100" class="w-full p-3 bg-slate-50 dark:bg-slate-800 shadow-inner rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-purple-500 mt-1"></div>
-                    </div>
-                    <button onclick="app.executeProgramFlow()" class="w-full py-4 mt-6 bg-purple-600 text-white rounded-xl font-black uppercase tracking-widest shadow-lg shadow-purple-500/30 active:scale-95 transition-transform">CREATE PROGRAM</button>
-                </div>
-            `;
-        } else if (type === 'routine') {
-            title = 'Improve Routine';
-            html = `
-                <div class="space-y-5 pb-10 mt-2">
-                    <p class="text-xs text-slate-500 font-medium">Engineer recurring behavioral habits.</p>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Habit Title</label><input type="text" id="flow-routine-title" class="w-full p-3 bg-slate-50 dark:bg-slate-800 shadow-inner rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none text-slate-800 dark:text-slate-200 focus:border-emerald-500 mt-1"></div>
-                    
-                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900 shadow-sm mt-2">
-                        <label class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 uppercase">Identity Shift</label>
-                        <input type="text" id="flow-routine-identity" placeholder="e.g. I am a Runner" class="w-full p-2 bg-white dark:bg-slate-800 rounded-lg mt-1 text-xs outline-none border border-indigo-200 dark:border-indigo-800 text-slate-800 dark:text-slate-200 focus:border-indigo-500 shadow-inner">
-                    </div>
-                    <div class="bg-sky-50 dark:bg-sky-900/20 p-3 rounded-xl border border-sky-100 dark:border-sky-900 shadow-sm">
-                        <label class="text-[9px] font-bold text-sky-600 dark:text-sky-400 uppercase">Trigger</label>
-                        <input type="text" id="flow-routine-trigger" placeholder="When [X] happens..." class="w-full p-2 bg-white dark:bg-slate-800 rounded-lg mt-1 text-xs outline-none border border-sky-200 dark:border-sky-800 text-slate-800 dark:text-slate-200 focus:border-sky-500 shadow-inner">
-                    </div>
-                    <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900 shadow-sm">
-                        <label class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Min. Action</label>
-                        <input type="text" id="flow-routine-min" placeholder="Make it incredibly easy" class="w-full p-2 bg-white dark:bg-slate-800 rounded-lg mt-1 text-xs outline-none border border-emerald-200 dark:border-emerald-800 text-slate-800 dark:text-slate-200 focus:border-emerald-500 shadow-inner">
-                    </div>
-
-                    <button onclick="app.executeRoutineFlow()" class="w-full py-4 mt-4 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform">INITIALIZE ROUTINE</button>
-                </div>
-            `;
-        }
-        
-        document.getElementById('create-hub-title').innerHTML = `<button onclick="app.backToCreateHub()" class="mr-3 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors inline-flex items-center justify-center align-middle"><i class="fas fa-arrow-left"></i></button> <span class="text-slate-800 dark:text-slate-100 align-middle">${title}</span>`;
-        flowContainer.innerHTML = html;
-        
-        if(type === 'plan') {
-            document.getElementById('flow-plan-deadline').value = app.getLocalISO();
-        }
-    },
-
-    backToCreateHub: () => {
-        document.getElementById('create-hub-title').innerHTML = `<i class="fas fa-magic text-blue-500 mr-2"></i><span class="text-slate-800 dark:text-slate-100">Creation Hub</span>`;
-        document.getElementById('create-hub-flow').classList.add('hidden');
-        document.getElementById('create-hub-menu').classList.remove('hidden');
-    },
-
-    executePlanFlow: () => {
-        const title = document.getElementById('flow-plan-title').value.trim();
-        if(!title) return alert('Plan title required.');
-        const deadline = document.getElementById('flow-plan-deadline').value || app.getLocalISO();
-        const identity = document.getElementById('flow-plan-identity').value.trim();
-        const trigger = document.getElementById('flow-plan-trigger').value.trim();
-        const reward = document.getElementById('flow-plan-reward').value.trim();
-        const h1 = document.getElementById('flow-plan-habit1').value.trim();
-        const h2 = document.getElementById('flow-plan-habit2').value.trim();
-        
-        const rootId = 'id_' + Date.now().toString() + Math.random().toString(36).substr(2,5);
-        const rootTask = {
-            id: rootId, title: title, deadline: deadline, start: app.getLocalISO(),
-            type: 'task', priority: 'High', group: 'General',
-            identity: identity, trigger: trigger, completed: false, failed: false
-        };
-        app.data.push(rootTask);
-        
-        if(h1) {
-            app.data.push({
-                id: 'id_' + (Date.now()+1).toString() + Math.random().toString(36).substr(2,5), title: h1, deadline: app.getLocalISO(), start: app.getLocalISO(),
-                type: 'task', priority: 'Medium', recurring: true, parentId: rootId, group: 'General', completed: false, failed: false
-            });
-        }
-        if(h2) {
-            app.data.push({
-                id: 'id_' + (Date.now()+2).toString() + Math.random().toString(36).substr(2,5), title: h2, deadline: app.getLocalISO(), start: app.getLocalISO(),
-                type: 'task', priority: 'Medium', recurring: true, parentId: rootId, group: 'General', completed: false, failed: false
-            });
-        }
-
-        if(reward) {
-            app.programs.push({
-                id: 'prog_' + Date.now().toString() + Math.random().toString(36).substr(2,5), name: title + ' Program',
-                reward: reward, milestone: 100, tasks: [rootId]
-            });
-        }
-
-        app.save();
-        app.renderList();
-        document.getElementById('create-hub-modal').classList.remove('open');
-        app.backToCreateHub();
-    },
-
-    executeProgramFlow: () => {
-        const title = document.getElementById('flow-prog-title').value.trim();
-        const reward = document.getElementById('flow-prog-reward').value.trim();
-        const ms = parseInt(document.getElementById('flow-prog-milestone').value) || 100;
-        if(!title || !reward) return alert('Required fields missing.');
-        app.programs.push({
-            id: 'prog_' + Date.now().toString() + Math.random().toString(36).substr(2,5), name: title,
-            reward: reward, milestone: ms, tasks: []
-        });
-        app.save();
-        if(document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) app.renderStats();
-        document.getElementById('create-hub-modal').classList.remove('open');
-        app.backToCreateHub();
-        
-        // Opens the program modal so they can instantly start linking tasks
-        setTimeout(() => app.openProgramModal(), 200); 
-    },
-
-    executeRoutineFlow: () => {
-        const title = document.getElementById('flow-routine-title').value.trim();
-        const identity = document.getElementById('flow-routine-identity').value.trim();
-        const trigger = document.getElementById('flow-routine-trigger').value.trim();
-        const minAct = document.getElementById('flow-routine-min').value.trim();
-        if(!title) return alert('Habit title required.');
-        
-        app.data.push({
-            id: 'id_' + Date.now().toString() + Math.random().toString(36).substr(2,5), title: title, deadline: app.getLocalISO(), start: app.getLocalISO(),
-            type: 'task', priority: 'Medium', recurring: true, group: 'General',
-            identity: identity, trigger: trigger, minAction: minAct, completed: false, failed: false
-        });
-        app.save();
-        app.renderList();
-        document.getElementById('create-hub-modal').classList.remove('open');
-        app.backToCreateHub();
-    },
+            downloadSVG: (svgData, filename) => {
+                const blob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename || "flowchart.svg";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            },
 
                         viewFlowchart: (id) => {
                 const root = app.data.find(x => x.id === id);
