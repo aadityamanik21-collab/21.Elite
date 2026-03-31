@@ -1225,7 +1225,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 <p class="text-xs text-slate-400 mt-1">Stop planning. Start executing.</p>
             </div>
 
-            <div class="mt-4 mb-2">
+            <div id="programs-section" class="mt-4 mb-2">
                  <div class="flex justify-between items-center mb-3 px-1">
                     <h3 class="font-bold text-slate-700 text-sm">Programs & Rewards</h3>
                     <button onclick="app.openProgramModal()" class="text-[10px] font-bold bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i> NEW PROGRAM</button>
@@ -4073,14 +4073,22 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 }
             },
             
-            toggleMainFlowVisibility: (id) => {
-                const item = app.data.find(x => x.id === id);
-                if (item) {
-                    item.hideFromMainFlow = !item.hideFromMainFlow;
-                    app.save();
-                    app.renderList();
-                }
-            },
+                    toggleMainFlowVisibility: (id) => {
+            const item = app.data.find(x => x.id === id);
+            if (item) {
+                item.hideFromMainFlow = !item.hideFromMainFlow;
+                app.save();
+                app.renderList();
+            }
+        },
+        togglePin: (id) => {
+            const item = app.data.find(x => x.id === id);
+            if (item) {
+                item.pinned = !item.pinned;
+                app.save();
+                app.renderList();
+            }
+        },
             
                                             processRecurringTasks: () => {
             if (!app.data) return;
@@ -4134,6 +4142,12 @@ html.dark .boot-status, html.growth-mode .boot-status {
 
             const list = document.getElementById('items-list');
             if(list) list.innerHTML = '';
+            
+            const programsSec = document.getElementById('programs-section');
+            if (programsSec) {
+                programsSec.classList.toggle('hidden', !!(app.currParent || app.currTimeScope));
+            }
+            
             const title = document.getElementById('page-title');
             const subtitle = document.getElementById('page-subtitle');
                 const back = document.getElementById('back-btn');
@@ -4253,7 +4267,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     const longPending = rootTasks.filter(x => getProjectScale(x.start, x.deadline) > 180 && !x.completed && !x.failed).length;
 
 
-                    list.innerHTML += `
+                    const carouselHtml = `
                     <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory scroller pb-6 pt-2 w-[100vw] -ml-4 px-4 h-[65vh]">
                         <div onclick="app.setTimeScope('short')" class="min-w-[85%] snap-center rounded-3xl p-6 bg-gradient-to-br from-rose-600 to-rose-900 text-white shadow-[0_10px_30px_-10px_rgba(225,29,72,0.6)] cursor-pointer tap-scale relative overflow-hidden border border-rose-500/30 flex flex-col justify-between">
                             <i class="fas fa-fire absolute -right-8 -top-8 text-9xl text-rose-500/20 rotate-12 pointer-events-none"></i>
@@ -4294,16 +4308,29 @@ html.dark .boot-status, html.growth-mode .boot-status {
                                 </div>
                                 <button onclick="event.stopPropagation(); app.addGroup('project')" class="text-[9px] font-black bg-white/20 text-white backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/30 shadow-sm active:scale-95 flex items-center gap-1.5 uppercase tracking-widest"><i class="fas fa-layer-group"></i> GROUP</button>
                             </div>
-                            <div class="flex justify-between items-end relative z-10 mb-4">
+                                                        <div class="flex justify-between items-end relative z-10 mb-4">
                                 <div><div class="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-1">Active Load</div><span class="text-6xl font-black leading-none">${longPending}</span></div>
                                 <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm text-xl"><i class="fas fa-arrow-right"></i></div>
                             </div>
                         </div>
                     </div>
-                    `;
+                `;
 
-                                } else if (app.currTimeScope && !app.currParent) { 
-                    const scopeNames = { short: 'Short Term', medium: 'Medium Term', long: 'Long Term' };
+                list.innerHTML = carouselHtml;
+
+                const pinnedTasks = app.data.filter(x => x.pinned && !x.completed && !x.failed && x.type !== 'event');
+                if (pinnedTasks.length > 0) {
+                    const pinnedFrag = document.createDocumentFragment();
+                    const pinnedHeader = document.createElement('div');
+                    pinnedHeader.className = 'font-bold text-slate-400 text-xs uppercase tracking-widest mb-3 mt-2 px-1 flex items-center justify-between';
+                    pinnedHeader.innerHTML = '<span><i class="fas fa-thumbtack text-blue-500 mr-2"></i> Pinned Targets</span>';
+                    pinnedFrag.appendChild(pinnedHeader);
+                    pinnedTasks.forEach(t => pinnedFrag.appendChild(app.createItemEl(t)));
+                    list.insertBefore(pinnedFrag, list.firstChild);
+                }
+
+            } else if (app.currTimeScope && !app.currParent) {
+                   const scopeNames = { short: 'Short Term', medium: 'Medium Term', long: 'Long Term' };
                     title.innerText = scopeNames[app.currTimeScope]; title.className = "font-black text-2xl leading-none truncate text-slate-800 dark:text-slate-100";
                     subtitle.innerText = 'EXECUTION QUEUE'; back.classList.remove('hidden'); itemsHeader.classList.add('hidden');
 
@@ -4461,10 +4488,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     <span class="text-[10px] font-bold tracking-wider uppercase ${i.priority==='High'?'text-red-500':i.priority==='Medium'?'text-amber-500':'text-blue-500'} shrink-0">${i.priority}</span>
                     <span class="text-neutral-300 dark:text-neutral-800 shrink-0">&middot;</span>
                     <span class="text-[10px] font-medium tracking-wide text-neutral-500 dark:text-neutral-500 uppercase shrink-0">${i.type}</span>
-                    ${subCount > 0 ? `<span class="text-neutral-300 dark:text-neutral-800 shrink-0">&middot;</span><span class="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1 shrink-0"><i class="fas fa-code-branch text-[9px]"></i>${subCount}</span>` : ''}
+                                                ${subCount > 0 ? `<span class="text-neutral-300 dark:text-neutral-800 shrink-0">&middot;</span><span class="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1 shrink-0"><i class="fas fa-code-branch text-[9px]"></i>${subCount}</span>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); app.togglePin('${i.id}')" class="shrink-0 p-2 opacity-60 hover:opacity-100 transition-opacity z-10"><i class="fas fa-thumbtack ${i.pinned ? 'text-blue-500 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]' : 'text-neutral-400 dark:text-neutral-600'}"></i></button>
                 </div>
-            </div>
-        </div>
 
         ${systemHtml}
         
