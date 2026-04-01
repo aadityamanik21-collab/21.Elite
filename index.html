@@ -1788,9 +1788,12 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 </div>
                 
                 <div class="flex items-center justify-between mb-4 bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800">
-                    <label class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase flex items-center gap-2">
-                        <i class="fas fa-user-ninja"></i> Hide as Backup Task
-                    </label>
+                    <div>
+                        <label class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase flex items-center gap-2">
+                            <i class="fas fa-user-ninja"></i> Make THIS Task a Hidden Backup
+                        </label>
+                        <p class="text-[8px] font-bold text-indigo-400 uppercase mt-1">(Do NOT check this on your Main Task!)</p>
+                    </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="inp-is-backup" class="sr-only peer">
                         <div class="w-9 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500 shadow-inner"></div>
@@ -1883,6 +1886,20 @@ html.dark .boot-status, html.growth-mode .boot-status {
         </div>
     </div>
    
+     <div class="matrix-overlay" id="backup-vault-overlay" onclick="if(event.target===this) app.closeBackupVault()">
+        <div class="matrix-core" style="background: #6366f1; border-color: #1e293b; box-shadow: 0 0 20px #6366f1;"></div>
+        <div class="vault-content" style="border-color: #6366f1; box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-black text-indigo-600 tracking-tight"><i class="fas fa-life-ring mr-2"></i>BACKUP VAULT</h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hidden Contingency Tasks</p>
+                </div>
+                <button onclick="app.closeBackupVault()" class="w-10 h-10 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 hover:text-red-500 transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="backup-vault-list" class="space-y-3 pb-10"></div>
+        </div>
+    </div>
+
      <div class="matrix-overlay" id="vault-overlay" onclick="if(event.target===this) app.closeVault()">
         <div class="matrix-core"></div>
         <div class="vault-content" onclick="event.stopPropagation()">
@@ -4704,14 +4721,68 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
             },
             
 
-        openBackupTasks: () => {
-            const backups = app.data.filter(x => x.backupLink || x.activeForMainS1);
-            if (backups.length === 0) return alert("No backup tasks configured in your system.");
-            let list = "ACTIVE BACKUP TASKS:\n\n";
+                openBackupTasks: () => {
+            const overlay = document.getElementById('backup-vault-overlay');
+            if(!overlay) return alert("Backup Vault UI missing.");
+            overlay.classList.add('active');
+            app.renderBackupVault();
+        },
+        
+        closeBackupVault: () => {
+            document.getElementById('backup-vault-overlay').classList.remove('active');
+        },
+        
+        renderBackupVault: () => {
+            const list = document.getElementById('backup-vault-list');
+            if(!list) return;
+            list.innerHTML = '';
+            
+            const backups = app.data.filter(x => x.isBackupTask && !x.completed && !x.failed);
+            if (backups.length === 0) {
+                list.innerHTML = `<div class="text-center text-slate-400 mt-10 italic">No hidden backup tasks in standby.</div>`;
+                return;
+            }
+            
             backups.forEach(b => {
-                list += `- [${escapeHTML(b.title)}] -> System: ${b.backupSystem || 'S1'}\n`;
+                const el = document.createElement('div');
+                el.className = "bg-white dark:bg-slate-800 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 shadow-sm mb-2 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 transition-colors";
+                
+                // Identify what it backs up
+                const mains = app.data.filter(x => x.backupLink === b.id);
+                let linkedText = mains.length > 0 ? `BACKS UP: ${mains.map(m=>escapeHTML(m.title)).join(', ')}` : "UNLINKED / STANDBY";
+
+                el.innerHTML = `
+                    <div class="flex-1 w-full">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded uppercase">STANDBY</span>
+                        </div>
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm truncate">${escapeHTML(b.title)}</h3>
+                        <div class="text-[10px] text-indigo-400 font-mono mt-1">${linkedText}</div>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                        <button onclick="app.deployBackup('${b.id}')" class="flex-1 md:flex-none text-[10px] font-bold bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg transition-colors shadow-sm"><i class="fas fa-arrow-up mr-1"></i> DEPLOY</button>
+                        <button onclick="app.editTaskFromBackup('${b.id}')" class="flex-1 md:flex-none text-[10px] font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600"><i class="fas fa-pencil-alt mr-1"></i> EDIT</button>
+                    </div>
+                `;
+                list.appendChild(el);
             });
-            alert(list);
+        },
+        
+        deployBackup: (id) => {
+            const b = app.data.find(x => x.id === id);
+            if(b) {
+                b.isBackupTask = false;
+                b.deadline = app.getLocalISO(); // Bring to today
+                app.save();
+                app.renderBackupVault();
+                app.renderList();
+                alert(`Deployed [${escapeHTML(b.title)}] to the active queue.`);
+            }
+        },
+        
+        editTaskFromBackup: (id) => {
+            app.closeBackupVault();
+            app.openModal('task', id);
         },
 
         // --- THE VAULT LOGIC ---
