@@ -1212,6 +1212,9 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     <button onclick="app.toggleTrackMode()" id="btn-track-mode" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 border border-indigo-200 shadow-sm active:scale-95 flex items-center justify-center transition-transform" title="Toggle Flowchart">
                         <i class="fas fa-project-diagram text-sm"></i>
                     </button>
+                    <button onclick="app.openBackupTasks()" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm active:scale-95 flex items-center justify-center transition-transform" title="View Backup Tasks">
+                        <i class="fas fa-life-ring text-sm"></i>
+                    </button>
                     <button onclick="app.openVault()" class="w-8 h-8 rounded-lg bg-slate-800 text-green-400 border border-green-900/50 shadow-sm active:scale-95 flex items-center justify-center transition-transform" title="Access Vault">
                         <i class="fas fa-fingerprint text-sm"></i>
                     </button>
@@ -1763,6 +1766,25 @@ html.dark .boot-status, html.growth-mode .boot-status {
                         <option value="">None (Standard Task)</option>
                     </select>
                     <p class="text-[8px] text-slate-400 mt-1 uppercase font-bold">Select an outcome this task acts as a path or backup for.</p>
+                </div>
+                
+                <div id="field-backup" class="mb-5 border-t border-slate-200 pt-4">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase"><i class="fas fa-life-ring mr-1"></i> Backup Task (If-Then System)</label>
+                    <select id="inp-backup-link" class="w-full p-3 bg-slate-100 rounded-xl mt-1 font-semibold outline-none text-xs">
+                        <option value="">None (Standard Task)</option>
+                    </select>
+                    
+                    <div class="mt-3 flex gap-2" id="backup-system-options">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="backupSystem" value="S1" class="peer sr-only" checked>
+                            <div class="p-2 text-center rounded-lg border border-slate-200 text-slate-500 font-bold text-[10px] transition-all peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 shadow-sm">S1: Loop Main</div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="backupSystem" value="S2" class="peer sr-only">
+                            <div class="p-2 text-center rounded-lg border border-slate-200 text-slate-500 font-bold text-[10px] transition-all peer-checked:bg-red-500 peer-checked:text-white peer-checked:border-red-500 shadow-sm">S2: Fail Main</div>
+                        </label>
+                    </div>
+                    <p class="text-[8px] text-slate-400 mt-2 uppercase font-bold text-center">S1: Main reappears after backup done.<br>S2: Main fails instantly.</p>
                 </div>
 
                 <div id="field-priority" class="mb-5"><label class="text-[10px] font-bold text-slate-400 uppercase">Priority</label>
@@ -3910,6 +3932,16 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     i.failed = false;
                     i.completedAt = app.getLocalISO();
                     delete i.partial; // FIX: Wipes out the "Give Up" curse upon completion
+                    
+                    // S1 Loop Logic: Reappear Main Task
+                    if (i.activeForMainS1) {
+                        const main = app.data.find(x => x.id === i.activeForMainS1);
+                        if (main) {
+                            main.isHiddenS1 = false;
+                            delete i.activeForMainS1;
+                            setTimeout(() => alert(`Backup completed. Main task [${escapeHTML(main.title)}] has reappeared in your execution queue.`), 200);
+                        }
+                    }
                 } else {
                     delete i.completedAt;
                     delete i.partial; // FIX: Wipes curse upon revival
@@ -3932,17 +3964,63 @@ html.dark .boot-status, html.growth-mode .boot-status {
             }
         },
 
-        toggleFail: (id) => {
+        toggleMissed: (id) => {
+            const i = app.data.find(x => x.id === id);
+            if (i) {
+                if (i.completed || i.failed) return alert("Task is already completed or failed. Revert it first.");
+                
+                i.missedHistory = i.missedHistory || [];
+                const logTime = app.getLocalISO() + ' ' + new Date().toLocaleTimeString();
+                i.missedHistory.push(logTime);
+                
+                const backup = app.data.find(x => x.id === i.backupLink);
+                if (!backup && i.backupLink) alert("Warning: Linked backup task no longer exists.");
+                
+                if (i.backupSystem === 'S2') {
+                    app.toggleFail(id, true); // Send directly to the Graveyard
+                    if (backup) {
+                        backup.hideFromMainFlow = false;
+                        backup.deadline = app.getLocalISO();
+                    }
+                } else {
+                    // S1 Loop Main System
+                    i.isHiddenS1 = true;
+                    if (backup) {
+                        backup.hideFromMainFlow = false;
+                        backup.activeForMainS1 = i.id;
+                        backup.deadline = app.getLocalISO();
+                        alert(`Main task temporarily hidden. Backup task [${escapeHTML(backup.title)}] activated.`);
+                    } else {
+                        alert("No backup task linked. System defaults to recording the miss.");
+                    }
+                }
+                app.save();
+                app.renderList();
+            }
+        },
+
+        showMissedHistory: (id) => {
+            const i = app.data.find(x => x.id === id);
+            if (i && i.missedHistory && i.missedHistory.length > 0) {
+                alert(`Missed History for [${escapeHTML(i.title)}]:\n\nTotal Misses: ${i.missedHistory.length}\n\n` + i.missedHistory.map((m, idx) => `${idx + 1}. ${m}`).join('\n'));
+            }
+        },
+
+        toggleFail: (id, skipPrompt = false) => {
             const i = app.data.find(x => x.id === id);
             if(i) {
                 if (!i.failed) {
-                    const reason = prompt("State your reason for failure. Be brutally honest:");
-                    if (reason === null) return; // Cancelled
+                    let reason = "Automated S2 System Failure.";
+                    if (!skipPrompt) {
+                        const r = prompt("State your reason for failure. Be brutally honest:");
+                        if (r === null) return; // Cancelled
+                        reason = r.trim() === "" ? "No excuse provided." : r;
+                    }
                     i.failed = true;
-                    i.failReason = reason.trim() === "" ? "No excuse provided." : reason;
+                    i.failReason = reason;
                     i.completed = false;
                     delete i.completedAt;
-                    delete i.partial; // FIX: Wipes curse upon failure
+                    delete i.partial;
                     
                     // Cascade failure to active children to prevent stat corruption
                     const cascadeFail = (pid) => {
@@ -4354,7 +4432,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                         list.innerHTML = '<div class="text-center mt-20 opacity-50"><i class="fas fa-ghost text-4xl text-slate-300 dark:text-slate-600 mb-3"></i><p class="text-slate-500 font-mono text-xs">No targets in this horizon.</p></div>';
                     } else {
                                         app.projectGroups.forEach(grp => {
-                    const activeItems = scopedTasks.filter(x => !x.failed && !x.completed && (x.group || 'General') === grp);
+                    const activeItems = scopedTasks.filter(x => !x.failed && !x.completed && !x.isHiddenS1 && (x.group || 'General') === grp);
                     const stampedItems = scopedTasks.filter(x => x.completed && !x.failed && !x.partial && (x.group || 'General') === grp)
                         .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 12);
 
@@ -4384,7 +4462,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     list.appendChild(frag);
                 });
                         
-                        const activeOrphans = scopedTasks.filter(x => !x.failed && !x.completed && !app.projectGroups.includes(x.group || 'General'));
+                        const activeOrphans = scopedTasks.filter(x => !x.failed && !x.completed && !x.isHiddenS1 && !app.projectGroups.includes(x.group || 'General'));
                         const stampedOrphans = scopedTasks.filter(x => x.completed && !x.failed && !x.partial && !app.projectGroups.includes(x.group || 'General'))
                             .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0)).slice(0, 12);
                         
@@ -4412,7 +4490,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     title.innerText = p.title; title.className = "font-bold text-xl leading-none truncate text-slate-800";
                     subtitle.innerText = p.type.toUpperCase(); back.classList.remove('hidden'); itemsHeader.classList.add('hidden');
                     
-                    const activeItems = app.data.filter(x => x.parentId === app.currParent && x.type !== 'event' && !x.failed && !x.completed);
+                    const activeItems = app.data.filter(x => x.parentId === app.currParent && x.type !== 'event' && !x.failed && !x.completed && !x.isHiddenS1);
                     const stampedItems = app.data.filter(x => x.parentId === app.currParent && x.type !== 'event' && !x.failed && x.completed && !x.partial);
                     
                     if(activeItems.length === 0 && stampedItems.length === 0) {
@@ -4501,6 +4579,8 @@ html.dark .boot-status, html.growth-mode .boot-status {
         <div class="flex flex-wrap items-center gap-x-4 gap-y-3 mt-3 ml-8 pt-3 border-t border-neutral-100 dark:border-neutral-900 z-10 no-drag w-full pr-8">
             <button onclick="app.toggleVisibility('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Visibility"><i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'} text-[13px]"></i></button>
             <button onclick="app.toggleFail('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors ${isFailed ? 'text-red-500 dark:text-red-500' : ''}" title="Mark Failed"><i class="fas fa-times-circle text-[13px]"></i></button>
+<button onclick="app.toggleMissed('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-purple-500 transition-colors" title="Mark Missed"><i class="fas fa-ghost text-[13px]"></i></button>
+${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMissedHistory('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-indigo-500 transition-colors" title="Missed History"><i class="fas fa-history text-[13px]"></i></button>` : ''}
             ${!app.currParent ? `<button onclick="app.toggleMainFlowVisibility('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors ${i.hideFromMainFlow ? 'text-neutral-300 dark:text-neutral-800' : ''}" title="Main Flow"><i class="fas fa-sitemap text-[13px]"></i></button>` : ''}
             ${!app.currParent ? `<button onclick="app.downloadReport(null, '${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Report"><i class="fas fa-file-invoice text-[13px]"></i></button>` : ''}
             <button onclick="app.markPartial(event, '${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-orange-500 transition-colors" title="Give Up"><i class="fas fa-sign-out-alt text-[13px]"></i></button>
@@ -4595,8 +4675,19 @@ html.dark .boot-status, html.growth-mode .boot-status {
             },
             
 
-            // --- THE VAULT LOGIC ---
-            currVaultParent: null,
+        openBackupTasks: () => {
+            const backups = app.data.filter(x => x.backupLink || x.activeForMainS1);
+            if (backups.length === 0) return alert("No backup tasks configured in your system.");
+            let list = "ACTIVE BACKUP TASKS:\n\n";
+            backups.forEach(b => {
+                list += `- [${escapeHTML(b.title)}] -> System: ${b.backupSystem || 'S1'}\n`;
+            });
+            alert(list);
+        },
+
+        // --- THE VAULT LOGIC ---
+        currVaultParent: null,
+
             openVault: () => {
                 const overlay = document.getElementById('vault-overlay');
                 if(!overlay) return alert("Vault HTML is missing!");
@@ -8088,6 +8179,15 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     });
                 }
                 
+                // Populate the Backup Task dropdown
+                const backupSel = document.getElementById('inp-backup-link');
+                if (backupSel) {
+                    backupSel.innerHTML = '<option value="">None (Standard Task)</option>';
+                    app.data.filter(x => x.type !== 'event' && x.id !== id).forEach(t => {
+                        backupSel.innerHTML += `<option value="${t.id}">${escapeHTML(t.title)}</option>`;
+                    });
+                }
+                
                 if (mode === 'create') { 
                     document.getElementById('inp-id').value = ''; 
                     document.getElementById('inp-title').value = ''; 
@@ -8118,6 +8218,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     document.getElementById('inp-title').value = i.title; 
                     if (isRoot && i.group) grpSel.value = i.group; 
                     if (i.link && linkSel) linkSel.value = i.link;
+                if (i.backupLink && backupSel) backupSel.value = i.backupLink;
+                if (i.backupSystem) {
+                    const bsRadio = document.querySelector(`input[name="backupSystem"][value="${i.backupSystem}"]`);
+                    if(bsRadio) bsRadio.checked = true;
+                }
                     if (i.type === 'event') app.setMode('event'); else app.setMode('task'); 
                     
                     document.getElementById('inp-start').value = i.start || i.deadline || app.getLocalISO();
@@ -8179,9 +8284,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
             identity: document.getElementById('inp-identity')?.value || '',
             trigger: document.getElementById('inp-trigger')?.value || '',
             minAction: document.getElementById('inp-min-action')?.value || '',
-            safetyNet: document.getElementById('inp-safety-net')?.value || '',
-            link: document.getElementById('inp-link')?.value || '',
-            recurring: document.getElementById('inp-recurring')?.checked || false,
+                                safetyNet: document.getElementById('inp-safety-net')?.value || '',
+                    link: document.getElementById('inp-link')?.value || '',
+                    backupLink: document.getElementById('inp-backup-link')?.value || '',
+                    backupSystem: document.querySelector('input[name="backupSystem"]:checked')?.value || 'S1',
+                    recurring: document.getElementById('inp-recurring')?.checked || false,
             recurringUntil: document.getElementById('inp-recurring-until')?.value || '',
             recurringDays: selectedDays.length > 0 ? selectedDays : null,
             special: document.getElementById('inp-special')?.checked || false
