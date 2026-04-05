@@ -1808,6 +1808,22 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     </div>
                 </div>
 
+                <div id="field-color" class="mb-5 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-2">
+                            <i class="fas fa-palette"></i> Custom Calendar Color
+                        </label>
+                        <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">Overrides priority color</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="inp-use-color" class="sr-only peer" onchange="document.getElementById('inp-color').disabled = !this.checked; if(this.checked) document.getElementById('inp-color').focus();">
+                            <div class="w-9 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
+                        </label>
+                        <input type="color" id="inp-color" value="#3b82f6" disabled class="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent disabled:opacity-30 transition-opacity">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div id="field-start"><label class="text-[10px] font-bold text-slate-400 uppercase">Start</label><input type="date" id="inp-start" required class="w-full p-3 bg-slate-100 rounded-xl mt-1 text-xs font-bold outline-none"></div>
                     <div id="field-end"><label class="text-[10px] font-bold text-slate-400 uppercase" id="label-end">Due</label><input type="date" id="inp-end" required class="w-full p-3 bg-slate-100 rounded-xl mt-1 text-xs font-bold outline-none"></div>
@@ -5596,16 +5612,33 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 })
             ];
                     
-                    let slots = ''; 
-                    items.slice(0, 5).forEach(i => {
-                        let cls = ''; let textDeco = '';
-                        if (i.type === 'event') { cls = 'bg-Event'; }
-                        else if (i.failed) { cls = 'bg-red-800 opacity-60'; textDeco = 'line-through decoration-white/50'; }
-                        else if (i.partial) { cls = 'bg-slate-500 opacity-60'; textDeco = 'line-through decoration-white/50'; }
-                        else if (i.completed) { cls = 'bg-green-600 opacity-60'; textDeco = 'line-through decoration-white/50'; }
-                        else { cls = `bg-${i.priority}`; }
-                        slots += `<div class="slot ${cls} ${textDeco}">${escapeHTML(i.title)}</div>`;
-                    });
+                                let slots = '';
+            items.slice(0, 5).forEach(i => {
+                let cls = '';
+                let textDeco = '';
+                let customStyle = '';
+
+                if (i.type === 'event') {
+                    cls = 'bg-Event';
+                } else if (i.failed) {
+                    cls = 'bg-red-800 opacity-60';
+                    textDeco = 'line-through decoration-white/50';
+                } else if (i.partial) {
+                    cls = 'bg-slate-500 opacity-60';
+                    textDeco = 'line-through decoration-white/50';
+                } else if (i.completed) {
+                    cls = 'bg-green-600 opacity-60';
+                    textDeco = 'line-through decoration-white/50';
+                } else {
+                    if (i.taskColor) {
+                        customStyle = `style="background-color: ${i.taskColor} !important; border: 1px solid rgba(255,255,255,0.2);"`;
+                    } else {
+                        cls = `bg-${i.priority}`;
+                    }
+                }
+                
+                slots += `<div class="slot ${cls} ${textDeco}" ${customStyle}>${escapeHTML(i.title)}</div>`;
+            });
                     
                     if(items.length > 5) slots += `<div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">+${items.length - 5} MORE</div>`;
                     if(items.length === 0) slots = `<div class="slot slot-empty"></div>`;
@@ -8352,9 +8385,14 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     });
                 }
                 
-                if (mode === 'create') { 
-                    document.getElementById('inp-id').value = ''; 
-                    document.getElementById('inp-title').value = ''; 
+                                if (mode === 'create') {
+                    document.getElementById('inp-id').value = '';
+                    document.getElementById('inp-title').value = '';
+                    if(document.getElementById('inp-use-color')) {
+                        document.getElementById('inp-use-color').checked = false;
+                        document.getElementById('inp-color').disabled = true;
+                        document.getElementById('inp-color').value = '#3b82f6';
+                    }
                     document.querySelector('input[name="priority"][value="Medium"]').checked = true; 
                     document.getElementById('inp-start').value = app.getLocalISO(); 
                     document.getElementById('inp-end').value = app.getLocalISO(); 
@@ -8376,10 +8414,15 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     btn.classList.remove('bg-indigo-500', 'text-white', 'border-indigo-500');
                     btn.classList.add('text-slate-400', 'border-slate-600');
                 });
-            } else {
-                    const i = app.data.find(x => x.id === id); 
-                    document.getElementById('inp-id').value = i.id; 
-                    document.getElementById('inp-title').value = i.title; 
+                        } else {
+                    const i = app.data.find(x => x.id === id);
+                    document.getElementById('inp-id').value = i.id;
+                    document.getElementById('inp-title').value = i.title;
+                    if(document.getElementById('inp-use-color')) {
+                        document.getElementById('inp-use-color').checked = !!i.taskColor;
+                        document.getElementById('inp-color').disabled = !i.taskColor;
+                        document.getElementById('inp-color').value = i.taskColor || '#3b82f6';
+                    }
                     if (isRoot && i.group) grpSel.value = i.group; 
                     if (i.link && linkSel) linkSel.value = i.link;
                 if (i.backupLink && backupSel) backupSel.value = i.backupLink;
@@ -8456,6 +8499,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     backupLink: document.getElementById('inp-backup-link')?.value || '',
                     backupSystem: document.querySelector('input[name="backupSystem"]:checked')?.value || 'S1',
                     isBackupTask: document.getElementById('inp-is-backup')?.checked || false,
+                    taskColor: document.getElementById('inp-use-color')?.checked ? document.getElementById('inp-color').value : null,
                     recurring: document.getElementById('inp-recurring')?.checked || false,
             recurringUntil: document.getElementById('inp-recurring-until')?.value || '',
             recurringDays: selectedDays.length > 0 ? selectedDays : null,
