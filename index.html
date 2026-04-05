@@ -5660,11 +5660,11 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 const currentYear = app.boardYear || new Date().getFullYear();
                 app.boardYear = currentYear;
                 
-                const yearDisplay = document.getElementById('board-year-display');
-                if (yearDisplay) yearDisplay.innerText = currentYear;
-
-                const tasks = app.data.filter(x => x.type !== 'event' && x.deadline >= `${currentYear}-01-01` && x.deadline <= `${currentYear}-12-31`);
-                
+                            const yearDisplay = document.getElementById('board-year-display');
+            if (yearDisplay) yearDisplay.innerText = currentYear;
+            
+            // FIX: Respect the eye button (showInCal) visibility toggle for the board
+            const tasks = app.data.filter(x => x.type !== 'event' && x.deadline >= `${currentYear}-01-01` && x.deadline <= `${currentYear}-12-31` && x.showInCal !== false);
                 // Group tasks by Quarter
                 const quarters = { Q1: [], Q2: [], Q3: [], Q4: [] };
                 tasks.forEach(t => {
