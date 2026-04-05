@@ -4176,14 +4176,49 @@ html.dark .boot-status, html.growth-mode .boot-status {
             handleDragEnd: (e) => { app.dragSrcEl = null; document.querySelectorAll('.draggable-item, .group-header').forEach(i => { i.classList.remove('drag-over'); i.classList.remove('dragging'); }); app.renderList(); },
 
             
-            toggleVisibility: (id) => {
-                const item = app.data.find(x => x.id === id);
-                if (item) {
-                    item.showInCal = (item.showInCal === undefined) ? false : !item.showInCal;
-                    app.save();
-                    app.renderList();
+                    eyeStartX: null,
+        eyeStart: (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+            app.eyeStartX = e.clientX;
+        },
+        eyeEnd: (e, id) => {
+            if (app.eyeStartX === null) return;
+            e.preventDefault(); e.stopPropagation();
+            if (e.currentTarget.releasePointerCapture) e.currentTarget.releasePointerCapture(e.pointerId);
+            const diff = e.clientX - app.eyeStartX;
+            app.eyeStartX = null;
+            
+            const item = app.data.find(x => x.id === id);
+            if (!item) return;
+            
+            let visState = item.visibilityState || (item.showInCal === false ? 'hidden-all' : 'visible');
+            
+            if (Math.abs(diff) > 15) {
+                // Swipe detected
+                if (diff < 0 && visState === 'hidden-all') {
+                    item.visibilityState = 'hidden-board';
+                    item.showInCal = true;
+                    item.showInBoard = false;
+                } else if (diff > 0 && visState === 'hidden-board') {
+                    item.visibilityState = 'hidden-all';
+                    item.showInCal = false;
+                    item.showInBoard = false;
                 }
-            },
+            } else {
+                // Standard Tap
+                if (visState === 'visible') {
+                    item.visibilityState = 'hidden-all';
+                    item.showInCal = false;
+                    item.showInBoard = false;
+                } else {
+                    item.visibilityState = 'visible';
+                    item.showInCal = true;
+                    item.showInBoard = true;
+                }
+            }
+            app.save(); app.renderList();
+        },
             
                     toggleMainFlowVisibility: (id) => {
             const item = app.data.find(x => x.id === id);
@@ -4568,6 +4603,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
                 if(daysOld > 2) isStagnant = true;
             }
             
+            let visState = i.visibilityState || (i.showInCal === false ? 'hidden-all' : 'visible');
+            let visBg = visState === 'hidden-all' ? 'bg-blue-500' : (visState === 'hidden-board' ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-700');
+            let knobTranslate = visState === 'hidden-all' ? 'translate-x-5' : (visState === 'hidden-board' ? 'translate-x-2.5' : 'translate-x-0');
+            let visIcon = visState === 'hidden-all' ? 'fa-eye-slash text-blue-500' : (visState === 'hidden-board' ? 'fa-eye-slash text-purple-500' : 'fa-eye text-slate-400');
+            
             const el = document.createElement('div');
         // UPGRADE: Added Special Glow logic, maintaining pure black base for dark mode
         el.className = `p-4 mb-3 relative overflow-hidden flex flex-col bg-white dark:!bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm tap-scale draggable-item transition-all duration-300 ${isStagnant ? 'border-orange-500/30 dark:border-orange-500/30 shadow-orange-500/5' : ''} ${i.special && !i.completed ? 'ring-[1.5px] ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.25)] dark:shadow-[0_0_20px_rgba(251,191,36,0.15)] bg-gradient-to-br from-amber-500/10 to-transparent z-10 border-transparent dark:border-transparent' : ''}`;
@@ -4623,7 +4663,11 @@ html.dark .boot-status, html.growth-mode .boot-status {
         ${isFailed ? `<div class="ml-8 mt-2.5 text-[11px] font-medium text-red-600 dark:text-red-400 break-words whitespace-normal"><span class="font-bold text-[9px] uppercase tracking-widest mr-1 opacity-70">Reason:</span> ${i.failReason || 'None'}</div>` : ''}
 
         <div class="flex flex-wrap items-center gap-x-4 gap-y-3 mt-3 ml-8 pt-3 border-t border-neutral-100 dark:border-neutral-900 z-10 no-drag w-full pr-8">
-            <button onclick="app.toggleVisibility('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Visibility"><i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'} text-[13px]"></i></button>
+                                <div onpointerdown="app.eyeStart(event)" onpointerup="app.eyeEnd(event, '${i.id}')" onpointercancel="app.eyeEnd(event, '${i.id}')" style="touch-action: none;" class="relative w-9 h-4 rounded-full transition-colors cursor-pointer flex items-center shrink-0 ${visBg}" title="Visibility: Tap to hide everywhere, swipe left to hide from board only">
+                        <div class="absolute w-4 h-4 bg-white rounded-full shadow-sm transition-transform flex items-center justify-center ${knobTranslate}">
+                            <i class="fas ${visIcon} text-[8px]"></i>
+                        </div>
+                    </div>
             <button onclick="app.toggleFail('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors ${isFailed ? 'text-red-500 dark:text-red-500' : ''}" title="Mark Failed"><i class="fas fa-times-circle text-[13px]"></i></button>
 <button onclick="app.toggleMissed('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-purple-500 transition-colors" title="Mark Missed"><i class="fas fa-ghost text-[13px]"></i></button>
 ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMissedHistory('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-indigo-500 transition-colors" title="Missed History"><i class="fas fa-history text-[13px]"></i></button>` : ''}
@@ -5542,11 +5586,15 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 
                 let html = '';
                 
-                const buildBox = (dStr, dNum, dDayName, isToday, isArchived = false) => {
-                    const items = [
-                        ...app.data.filter(x => x.type === 'event' && x.deadline === dStr), 
-                        ...app.data.filter(x => x.type !== 'event' && x.deadline === dStr && x.showInCal !== false)
-                    ];
+                        const buildBox = (dStr, dNum, dDayName, isToday, isArchived = false) => {
+            const items = [
+                ...app.data.filter(x => x.type === 'event' && x.deadline === dStr),
+                ...app.data.filter(x => {
+                    if (x.type === 'event' || x.deadline !== dStr) return false;
+                    let state = x.visibilityState || (x.showInCal === false ? 'hidden-all' : 'visible');
+                    return state !== 'hidden-all';
+                })
+            ];
                     
                     let slots = ''; 
                     items.slice(0, 5).forEach(i => {
@@ -5663,8 +5711,11 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                             const yearDisplay = document.getElementById('board-year-display');
             if (yearDisplay) yearDisplay.innerText = currentYear;
             
-            // FIX: Respect the eye button (showInCal) visibility toggle for the board
-            const tasks = app.data.filter(x => x.type !== 'event' && x.deadline >= `${currentYear}-01-01` && x.deadline <= `${currentYear}-12-31` && x.showInCal !== false);
+            const tasks = app.data.filter(x => {
+                if (x.type === 'event' || x.deadline < `${currentYear}-01-01` || x.deadline > `${currentYear}-12-31`) return false;
+                let state = x.visibilityState || (x.showInCal === false ? 'hidden-all' : 'visible');
+                return state !== 'hidden-all' && state !== 'hidden-board';
+            });
                 // Group tasks by Quarter
                 const quarters = { Q1: [], Q2: [], Q3: [], Q4: [] };
                 tasks.forEach(t => {
