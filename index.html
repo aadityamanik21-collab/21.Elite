@@ -2111,8 +2111,8 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     let textDeco = '';
 
                     if (t.type === 'event') {
-                        indicator = '<span>[EVENT]</span>';
-                        colorClass = 'color: #c084fc;';
+                        indicator = '<span class="animate-pulse">[SYSTEM NOTE]</span>';
+                        colorClass = 'color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);';
                     } else if (t.completed && !t.partial) {
                         indicator = '<span>[1/1]</span>';
                         colorClass = 'color: #4ade80;';
@@ -6239,10 +6239,19 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     if (dailyTasks.length === 0) {
                         resultDiv.innerHTML = '<span class="text-sm text-slate-400 font-bold">No tasks found.</span>';
                     } else {
-                        const hits = dailyTasks.filter(t => t.completed && !t.partial).length;
+                        // Strict check: Only count tasks completed ON or BEFORE the deadline
+                        const hits = dailyTasks.filter(t => t.completed && !t.partial && t.completedAt && t.completedAt.split('T')[0] <= selectedDate).length;
                         const dRate = Math.round((hits / dailyTasks.length) * 100);
-                        let colorClass = dRate >= 80 ? 'text-emerald-500' : dRate >= 50 ? 'text-orange-500' : 'text-red-500';
-                        resultDiv.innerHTML = `<span class="${colorClass}">${dRate}%</span> <span class="text-[10px] text-slate-400 font-bold ml-1 uppercase">(${hits}/${dailyTasks.length} hits)</span>`;
+                        
+                        // Backlog cleared ON this selected date (tasks due earlier but finished today)
+                        const backlogClearedToday = app.data.filter(t => t.type !== 'event' && t.completed && !t.partial && t.completedAt && t.completedAt.split('T')[0] === selectedDate && t.deadline < selectedDate).length;
+
+                        let colorClass = dRate >= 80 ? 'text-emerald-500' : dRate >= 50 ? 'text-amber-500' : 'text-red-500';
+                        resultDiv.innerHTML = `
+                            <span class="${colorClass}">${dRate}% On-Time</span> 
+                            <span class="text-[10px] text-slate-400 font-bold ml-1 uppercase">(${hits}/${dailyTasks.length} hits)</span>
+                            ${backlogClearedToday > 0 ? `<div class="mt-2 inline-block bg-orange-100 border border-orange-300 text-orange-600 px-3 py-1 rounded-lg text-xs font-black tracking-widest shadow-sm">BACKLOG CLEARED: ${backlogClearedToday}</div>` : ''}
+                        `;
                     }
                 });
             }
@@ -6917,6 +6926,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     let impDates = [];
                     let deltaValues = [];
                     let hitRateValues = [];
+                    let backlogValues = [];
 
                     // FIX: Filter out future dates to prevent the chart from plummeting to 0% and glitching
                     const todayStr = app.getLocalISO();
@@ -6944,10 +6954,19 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                         
                         // Strict Daily Hitrate for exact data representation
                         let dailyTasks = app.data.filter(t => t.type !== 'event' && t.deadline === dStr);
-                        let dailyHitRate = dailyTasks.length ? Math.round((dailyTasks.filter(t=>t.completed && !t.partial).length / dailyTasks.length)*100) : 0;
+                        // Strict Daily Hitrate: Only count tasks completed ON or BEFORE the deadline
+                        let dailyHits = dailyTasks.filter(t => t.completed && !t.partial && t.completedAt && t.completedAt.split('T')[0] <= dStr).length;
+                        let dailyHitRate = dailyTasks.length ? Math.round((dailyHits / dailyTasks.length)*100) : 0;
                         
+                        // Backlog Clearance: Tasks completed ON this day, but due in the past
+                        let backlogClearedToday = app.data.filter(t => t.type !== 'event' && t.completed && !t.partial && t.completedAt && t.completedAt.split('T')[0] === dStr && t.deadline < dStr).length;
+                        
+                        // Convert backlog clearance into a metric relative to daily load volume
+                        let backlogMetric = dailyTasks.length ? Math.round((backlogClearedToday / dailyTasks.length) * 100) : backlogClearedToday * 10;
+
                         hitRateValues.push(dailyHitRate);
                         deltaValues.push(rRate - pRate);
+                        backlogValues.push(backlogMetric);
                     });
 
                     if (window.chartIns && window.chartIns.improvement) window.chartIns.improvement.destroy();
@@ -6976,7 +6995,18 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                                     backgroundColor: 'rgba(139, 92, 246, 0.05)',
                                     fill: true,
                                     tension: 0.4,
-                                    borderWidth: 1, // <--- THIN LINE
+                                    borderWidth: 1,
+                                    pointRadius: 0,
+                                    pointHitRadius: 15
+                                },
+                                {
+                                    label: 'Backlog Cleared',
+                                    data: backlogValues,
+                                    borderColor: '#f97316',
+                                    backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    borderWidth: 1,
                                     pointRadius: 0,
                                     pointHitRadius: 15
                                 }
