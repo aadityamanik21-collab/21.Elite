@@ -1113,42 +1113,85 @@ html.dark .boot-status, html.growth-mode .boot-status {
 }
 
         /* =========================================
-           PC & DESKTOP OPTIMIZATION (MOBILE CLAMP)
+           PC & DESKTOP OPTIMIZATION (LARGE SCREENS)
            ========================================= */
         @media (min-width: 1024px) {
-            body {
-                background-color: #050505 !important; /* Very dark background for sides */
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
+            /* 1. Center the Main Dashboard Layout */
+            #main-container {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            /* 2. Expand Top Navigation for Desktop */
+            .glass-nav {
+                max-width: 1060px;
+                width: 95%;
+                height: 60px;
+                border-radius: 30px;
+            }
+
+            /* 3. Elegant Centered Bottom Dock */
+            .dock-container {
+                max-width: 500px;
+                gap: 15px;
+                padding: 10px 20px;
+                border-radius: 40px;
+            }
+
+            /* 4. Show all 4 Quarters side-by-side in Board View (No scrolling needed) */
+            .board-container {
+                justify-content: space-between;
+                overflow-x: hidden;
+                gap: 20px;
+            }
+            .board-col {
+                width: 23.5%;
+                min-width: unset;
+                max-width: none;
+            }
+
+            /* 5. Optimize Bento Grid for Stats (4 Columns instead of 2) */
+            .bento-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .bento-wide {
+                grid-column: span 2;
+            }
+            #stats-main-content > .bento-wide:first-child {
+                grid-column: span 4;
+            }
+
+            /* 6. Center Modals so they look like floating desktop windows */
+            .modal {
+                max-width: 600px;
+                margin: auto;
+                border-radius: 24px !important;
+                height: auto;
+                max-height: 85vh;
             }
             
-            /* Force the app to act like a phone screen in the center */
-            #main-container, 
-            .glass-nav, 
-            .dock-container,
-            .fixed-bottom,
-            .fixed-top,
-            [class*="fixed bottom-"],
-            [class*="fixed top-"] {
-                max-width: 430px !important; /* iPhone Pro Max width */
-                margin-left: auto !important;
-                margin-right: auto !important;
-                left: 0 !important;
-                right: 0 !important;
+            /* 7. Expand Journal Input Grid */
+            #view-journal .grid-cols-3 {
+                grid-template-columns: repeat(6, 1fr);
             }
-
-            /* Neat floating effects for PC */
-            .glass-nav {
-                top: 15px !important;
-                border-radius: 24px !important;
-                width: 90% !important;
+            #custom-markers-container.grid-cols-3 {
+                grid-template-columns: repeat(6, 1fr);
             }
-
-            .dock-container {
-                bottom: 15px !important;
-                border-radius: 30px !important;
-                width: 95% !important;
+            
+            /* 8. Handle Growth Mode edge-to-edge aesthetics on PC */
+            html.growth-mode .glass-nav {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding-left: calc(50vw - 530px) !important;
+                padding-right: calc(50vw - 530px) !important;
+            }
+            html.growth-mode .dock-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding-left: calc(50vw - 250px) !important;
+                padding-right: calc(50vw - 250px) !important;
             }
         }
 
@@ -1772,10 +1815,10 @@ html.dark .boot-status, html.growth-mode .boot-status {
 <div class="dock-container boot-enter-centered delay-3">
 
 
-        <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn active" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
+        <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
         <button onclick="app.switchTab('calendar')" class="dock-btn" id="btn-calendar"><i class="far fa-calendar-alt"></i><span class="dock-lbl">SCHEDULE</span></button>
         <button onclick="app.switchTab('journal')" class="dock-btn" id="btn-journal"><i class="fas fa-feather-alt"></i><span class="dock-lbl">LOG</span></button>
-        <button onclick="app.switchTab('list')" class="dock-btn" id="btn-list"><i class="fas fa-stream"></i><span class="dock-lbl">PLAN</span></button>
+        <button onclick="app.switchTab('list')" class="dock-btn active" id="btn-list"><i class="fas fa-stream"></i><span class="dock-lbl">PLAN</span></button>
 
     </div>
 
@@ -9209,20 +9252,6 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 journal.renderCustomInputs();
                 journal.renderHistory();
                 app.updateStreakDisplay();
-
-                // Force switch to stats page on boot
-                setTimeout(() => {
-                    if (typeof app !== 'undefined') {
-                        // Triggers the view change without needing a physical click
-                        if (app.switchTab) {
-                            app.switchTab('stats');
-                        } else {
-                            // Fallback if stats uses a different toggle method
-                            const btnStats = document.getElementById('btn-stats');
-                            if (btnStats) btnStats.dispatchEvent(new Event('mousedown'));
-                        }
-                    }
-                }, 150);
 
                 if (Array.isArray(app.data) && !app.data.some(x => x.isDummy)) {
                     const dummyBtn = document.getElementById('btn-remove-dummy');
