@@ -1732,10 +1732,10 @@ html.dark .boot-status, html.growth-mode .boot-status {
 <div class="dock-container boot-enter-centered delay-3">
 
 
-        <button onclick="app.switchTab('list')" class="dock-btn active" id="btn-list"><i class="fas fa-stream"></i><span class="dock-lbl">PLAN</span></button>
+        <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
         <button onclick="app.switchTab('calendar')" class="dock-btn" id="btn-calendar"><i class="far fa-calendar-alt"></i><span class="dock-lbl">SCHEDULE</span></button>
         <button onclick="app.switchTab('journal')" class="dock-btn" id="btn-journal"><i class="fas fa-feather-alt"></i><span class="dock-lbl">LOG</span></button>
-                <button oncontextmenu="event.preventDefault();" ontouchstart="app.startStatsPress(event)" onmousedown="app.startStatsPress(event)" class="dock-btn" id="btn-stats" style="touch-action: none;"><i class="fas fa-chart-pie"></i><span class="dock-lbl">STATS</span></button>
+        <button onclick="app.switchTab('list')" class="dock-btn active" id="btn-list"><i class="fas fa-stream"></i><span class="dock-lbl">PLAN</span></button>
 
     </div>
 
