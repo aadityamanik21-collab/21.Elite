@@ -608,8 +608,9 @@ html {
             padding: 0 2px;
         }
 
-        /* Protect System Notifications from Dark Mode Bleed */
+/* Protect System Notifications from Dark Mode Bleed */
         html.dark .sl-window { background: linear-gradient(180deg, rgba(2, 11, 36, 0.95) 0%, rgba(6, 25, 70, 0.98) 100%) !important; border: 1.5px solid rgba(56, 189, 248, 0.5) !important; }
+        html.dark #sl-scroll-wrapper { background: transparent !important; border: none !important; }
         html.dark .sl-quest-item { background: rgba(14, 165, 233, 0.08) !important; color: #fff !important; }
         html.dark .sl-header-title, html.dark .sl-text, html.dark .sl-goal-title, html.dark .sl-timer, html.dark .sl-quest-btn { -webkit-text-fill-color: initial !important; }
         /* Tactical Priority Selection Colors */
