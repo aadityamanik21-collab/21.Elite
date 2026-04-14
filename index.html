@@ -7011,35 +7011,6 @@ const safeRender = (id, type, dataConfig, customOptions = {}) => {
                     });
                 };
                     
-                    // BRUTAL OVERRIDE: Assimilate charts into the System
-                    const isSystem = document.documentElement.classList.contains('growth-mode');
-                    const textColor = isSystem ? '#38bdf8' : '#94a3b8';
-                    const gridColor = isSystem ? 'rgba(56, 189, 248, 0.1)' : 'rgba(148, 163, 184, 0.15)';
-
-                    if (isSystem) {
-                        dataConfig.datasets.forEach(ds => {
-                            if (ds.borderColor && typeof ds.borderColor === 'string' && ds.borderColor !== 'transparent') ds.borderColor = '#38bdf8';
-                            if (ds.backgroundColor && typeof ds.backgroundColor === 'string' && ds.backgroundColor !== 'transparent') ds.backgroundColor = 'rgba(56, 189, 248, 0.2)';
-                            if (Array.isArray(ds.backgroundColor)) ds.backgroundColor = ds.backgroundColor.map(() => 'rgba(56, 189, 248, 0.2)');
-                            if (Array.isArray(ds.borderColor)) ds.borderColor = ds.borderColor.map(() => '#38bdf8');
-                        });
-                    }
-
-                    app.charts[id] = new Chart(ctx, {
-                        type: type, data: dataConfig,
-                        options: { 
-                            responsive: true, maintainAspectRatio: false, animation: { duration: 500, easing: 'easeOutQuart' },
-                            interaction: { mode: 'index', intersect: false }, 
-                            scales: {
-                                x: { display: true, grid: { display: false }, ticks: { font: { size: 9, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: '600' }, color: textColor, maxTicksLimit: 7 } },
-                                y: { display: true, beginAtZero: true, grid: { color: gridColor, drawBorder: false, borderDash: [4, 4] }, ticks: { font: { size: 9, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: '600' }, color: textColor, stepSize: 1, precision: 0 } }
-                            },
-                            plugins: {
-                                legend: { display: false }, tooltip: { backgroundColor: isSystem ? '#000' : 'rgba(15, 23, 42, 0.95)', titleFont: { size: 11, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: 'bold' }, bodyFont: { size: 11, family: isSystem ? 'JetBrains Mono' : 'Inter' }, padding: 12, cornerRadius: isSystem ? 0 : 8, displayColors: true, borderColor: isSystem ? '#38bdf8' : 'rgba(255,255,255,0.1)', borderWidth: 1 }
-                            }, ...customOptions
-                        }
-                    });
-                };
 
                 // Workload Forecast chart logic removed.
                 
