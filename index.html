@@ -6968,9 +6968,48 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
 
                 const niceDates = dates.map(d => { const dt = new Date(d + 'T00:00:00'); return `${dt.getDate()} ${dt.toLocaleDateString('en-US',{month:'short'})}`; });
 
-                const safeRender = (id, type, dataConfig, customOptions = {}) => {
+const safeRender = (id, type, dataConfig, customOptions = {}) => {
                     const ctx = document.getElementById(id); if(!ctx) return;
                     if(app.charts[id]) { app.charts[id].destroy(); }
+                    
+                    const isSystem = document.documentElement.classList.contains('growth-mode');
+                    
+                    const sysCols = (() => {
+                        const c = localStorage.getItem('zenith_sys_color') || 'blue';
+                        if(c === 'red') return { p: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', grid: 'rgba(239, 68, 68, 0.1)' };
+                        if(c === 'green') return { p: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', grid: 'rgba(16, 185, 129, 0.1)' };
+                        if(c === 'purple') return { p: '#a855f7', bg: 'rgba(168, 85, 247, 0.2)', grid: 'rgba(168, 85, 247, 0.1)' };
+                        if(c === 'gold') return { p: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)', grid: 'rgba(251, 191, 36, 0.1)' };
+                        return { p: '#38bdf8', bg: 'rgba(56, 189, 248, 0.2)', grid: 'rgba(56, 189, 248, 0.1)' };
+                    })();
+
+                    const textColor = isSystem ? sysCols.p : '#94a3b8';
+                    const gridColor = isSystem ? sysCols.grid : 'rgba(148, 163, 184, 0.15)';
+
+                    if (isSystem) {
+                        dataConfig.datasets.forEach(ds => {
+                            if (ds.borderColor && typeof ds.borderColor === 'string' && ds.borderColor !== 'transparent') ds.borderColor = sysCols.p;
+                            if (ds.backgroundColor && typeof ds.backgroundColor === 'string' && ds.backgroundColor !== 'transparent') ds.backgroundColor = sysCols.bg;
+                            if (Array.isArray(ds.backgroundColor)) ds.backgroundColor = ds.backgroundColor.map(() => sysCols.bg);
+                            if (Array.isArray(ds.borderColor)) ds.borderColor = ds.borderColor.map(() => sysCols.p);
+                        });
+                    }
+
+                    app.charts[id] = new Chart(ctx, {
+                        type: type, data: dataConfig,
+                        options: { 
+                            responsive: true, maintainAspectRatio: false, animation: { duration: 500, easing: 'easeOutQuart' },
+                            interaction: { mode: 'index', intersect: false }, 
+                            scales: {
+                                x: { display: true, grid: { display: false }, ticks: { font: { size: 9, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: '600' }, color: textColor, maxTicksLimit: 7 } },
+                                y: { display: true, beginAtZero: true, grid: { color: gridColor, drawBorder: false, borderDash: [4, 4] }, ticks: { font: { size: 9, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: '600' }, color: textColor, stepSize: 1, precision: 0 } }
+                            },
+                            plugins: {
+                                legend: { display: false }, tooltip: { backgroundColor: isSystem ? '#000' : 'rgba(15, 23, 42, 0.95)', titleFont: { size: 11, family: isSystem ? 'JetBrains Mono' : 'Inter', weight: 'bold' }, bodyFont: { size: 11, family: isSystem ? 'JetBrains Mono' : 'Inter' }, padding: 12, cornerRadius: isSystem ? 0 : 8, displayColors: true, borderColor: isSystem ? sysCols.p : 'rgba(255,255,255,0.1)', borderWidth: 1 }
+                            }, ...customOptions
+                        }
+                    });
+                };
                     
                     // BRUTAL OVERRIDE: Assimilate charts into the System
                     const isSystem = document.documentElement.classList.contains('growth-mode');
@@ -7222,16 +7261,25 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
             },
 
 
-            renderChart: (id, type, data, opts) => { 
+renderChart: (id, type, data, opts) => { 
                 const ctx = document.getElementById(id); if(!ctx) return; 
                 if(app.charts[id]) app.charts[id].destroy(); 
                 
                 if (document.documentElement.classList.contains('growth-mode')) {
+                    const sysCols = (() => {
+                        const c = localStorage.getItem('zenith_sys_color') || 'blue';
+                        if(c === 'red') return { p: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' };
+                        if(c === 'green') return { p: '#10b981', bg: 'rgba(16, 185, 129, 0.2)' };
+                        if(c === 'purple') return { p: '#a855f7', bg: 'rgba(168, 85, 247, 0.2)' };
+                        if(c === 'gold') return { p: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' };
+                        return { p: '#38bdf8', bg: 'rgba(56, 189, 248, 0.2)' };
+                    })();
+                    
                     data.datasets.forEach(ds => {
-                        if (ds.borderColor) ds.borderColor = '#38bdf8';
-                        if (ds.backgroundColor) ds.backgroundColor = 'rgba(56, 189, 248, 0.2)';
+                        if (ds.borderColor) ds.borderColor = sysCols.p;
+                        if (ds.backgroundColor) ds.backgroundColor = sysCols.bg;
                         if (ds.pointBackgroundColor) ds.pointBackgroundColor = '#000';
-                        if (ds.pointBorderColor) ds.pointBorderColor = '#38bdf8';
+                        if (ds.pointBorderColor) ds.pointBorderColor = sysCols.p;
                     });
                 }
                 
@@ -8443,7 +8491,7 @@ applySystemTheme: (color) => {
                 document.head.appendChild(styleEl);
             }
             
-            styleEl.innerHTML = `
+ styleEl.innerHTML = `
                 html.growth-mode body, html.growth-mode .splash-icon, html.growth-mode .nav-btn.active, html.growth-mode i:not([class*="text-"]), html.growth-mode .fab, html.growth-mode .system-top-btn, html.growth-mode #header-logo i, html.growth-mode .success-icon { color: ${p} !important; }
                 html.growth-mode .splash-text { -webkit-text-fill-color: ${p} !important; text-shadow: 0 0 20px ${p} !important; }
                 
@@ -8512,6 +8560,20 @@ applySystemTheme: (color) => {
                 html.growth-mode .flow-group { background: rgba(${bR}, 0.05); border-color: rgba(${bR}, 0.3); }
                 html.growth-mode .flow-group-title { border-color: ${b}; color: ${p}; }
                 html.growth-mode .flow-node::after { border-color: ${b}; }
+
+                /* MISSING OVERRIDES FIXED */
+                html.growth-mode .cal-day-row { border-left-color: ${b} !important; }
+                html.growth-mode .is-today { border-left-color: ${p} !important; background: rgba(${bR}, 0.1) !important; }
+                html.growth-mode .cal-month-header { color: ${p} !important; border-color: ${b} !important; }
+                html.growth-mode .modal { border-top: 2px solid ${p} !important; }
+                html.growth-mode .preview-card { border: 2px solid ${p} !important; }
+                html.growth-mode #preview-header { border-bottom: 1px solid ${b} !important; }
+                html.growth-mode #success-popup { border: 2px solid ${p} !important; box-shadow: 0 0 40px rgba(${pR}, 0.5) !important; }
+                html.growth-mode .success-icon { text-shadow: 0 0 15px ${p} !important; }
+                html.growth-mode .fab { border-color: ${p} !important; box-shadow: 0 0 25px ${b} !important; }
+                html.growth-mode .sl-goal-title { color: ${l} !important; text-shadow: 0 0 15px rgba(${pR}, 0.6) !important; }
+                html.growth-mode .text-slate-600, html.growth-mode .text-slate-400, html.growth-mode .text-white { color: ${l} !important; opacity: 0.8 !important; }
+                html.growth-mode #mode-task.bg-white, html.growth-mode #mode-event.bg-white { background-color: rgba(${pR}, 0.15) !important; border: 1px solid ${p} !important; color: ${l} !important; text-shadow: 0 0 10px rgba(${pR},0.8) !important; }
             `;
         },
 
