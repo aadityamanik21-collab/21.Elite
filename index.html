@@ -4838,19 +4838,19 @@ html {
                             <i class="fas ${visIcon} text-[8px]"></i>
                         </div>
                     </div>
-            <button onclick="app.toggleFail('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors ${isFailed ? 'text-red-500 dark:text-red-500' : ''}" title="Mark Failed"><i class="fas fa-times-circle text-[13px]"></i></button>
-<button onclick="app.toggleMissed('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-purple-500 transition-colors" title="Mark Missed"><i class="fas fa-ghost text-[13px]"></i></button>
-${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMissedHistory('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-indigo-500 transition-colors" title="Missed History"><i class="fas fa-history text-[13px]"></i></button>` : ''}
-            ${!app.currParent ? `<button onclick="app.toggleMainFlowVisibility('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors ${i.hideFromMainFlow ? 'text-neutral-300 dark:text-neutral-800' : ''}" title="Main Flow"><i class="fas fa-sitemap text-[13px]"></i></button>` : ''}
-            ${!app.currParent ? `<button onclick="app.downloadReport(null, '${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Report"><i class="fas fa-file-invoice text-[13px]"></i></button>` : ''}
-            <button onclick="app.markPartial(event, '${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-orange-500 transition-colors" title="Give Up"><i class="fas fa-sign-out-alt text-[13px]"></i></button>
-            <button onclick="app.viewFlowchart('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Flowchart"><i class="fas fa-project-diagram text-[13px]"></i></button>
+<button onclick="app.toggleFail('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors ${isFailed ? 'text-red-500 dark:text-red-500' : ''}" title="Mark Failed"><i class="fas fa-times-circle text-base"></i></button>
+<button onclick="app.toggleMissed('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-purple-500 transition-colors" title="Mark Missed"><i class="fas fa-ghost text-base"></i></button>
+${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMissedHistory('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-indigo-500 transition-colors" title="Missed History"><i class="fas fa-history text-base"></i></button>` : ''}
+            ${!app.currParent ? `<button onclick="app.toggleMainFlowVisibility('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors ${i.hideFromMainFlow ? 'text-neutral-300 dark:text-neutral-800' : ''}" title="Main Flow"><i class="fas fa-sitemap text-base"></i></button>` : ''}
+            ${!app.currParent ? `<button onclick="app.downloadReport(null, '${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Report"><i class="fas fa-file-invoice text-base"></i></button>` : ''}
+            <button onclick="app.markPartial(event, '${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-orange-500 transition-colors" title="Give Up"><i class="fas fa-sign-out-alt text-base"></i></button>
+            <button onclick="app.viewFlowchart('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Flowchart"><i class="fas fa-project-diagram text-base"></i></button>
             
             <div class="flex-1 min-w-[10px]"></div>
             
             <div class="flex items-center gap-4 shrink-0">
-                <button onclick="app.openModal('edit','${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Edit"><i class="fas fa-pencil-alt text-[13px]"></i></button>
-                <button onclick="app.delItem('${i.id}')" class="text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors" title="Delete"><i class="fas fa-trash text-[13px]"></i></button>
+                <button onclick="app.openModal('edit','${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Edit"><i class="fas fa-pencil-alt text-base"></i></button>
+                <button onclick="app.delItem('${i.id}')" class="p-1 text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition-colors" title="Delete"><i class="fas fa-trash text-base"></i></button>
             </div>
         </div>`;
         return el;
@@ -8421,17 +8421,19 @@ factoryReset: async () => {
                 });
             },
 
-                    applySystemTheme: (color) => {
+applySystemTheme: (color) => {
             localStorage.setItem('zenith_sys_color', color);
-            let p, b, l, pR, bR;
-            if (color === 'red') { p='#ef4444'; b='#b91c1c'; l='#fca5a5'; pR='239, 68, 68'; bR='185, 28, 28'; }
-            else if (color === 'green') { p='#10b981'; b='#047857'; l='#6ee7b7'; pR='16, 185, 129'; bR='4, 120, 87'; }
-            else if (color === 'purple') { p='#a855f7'; b='#7e22ce'; l='#d8b4fe'; pR='168, 85, 247'; bR='126, 34, 206'; }
-            else if (color === 'gold') { p='#fbbf24'; b='#b45309'; l='#fde047'; pR='251, 191, 36'; bR='180, 83, 9'; }
+            let p, b, l, pR, bR, bgTop, bgBot;
+            
+            // Generate exact dark RGB background tints matching the selected accent color
+            if (color === 'red') { p='#ef4444'; b='#b91c1c'; l='#fca5a5'; pR='239, 68, 68'; bR='185, 28, 28'; bgTop='20, 0, 0'; bgBot='40, 0, 0'; }
+            else if (color === 'green') { p='#10b981'; b='#047857'; l='#6ee7b7'; pR='16, 185, 129'; bR='4, 120, 87'; bgTop='0, 20, 10'; bgBot='0, 40, 20'; }
+            else if (color === 'purple') { p='#a855f7'; b='#7e22ce'; l='#d8b4fe'; pR='168, 85, 247'; bR='126, 34, 206'; bgTop='15, 0, 25'; bgBot='30, 0, 50'; }
+            else if (color === 'gold') { p='#fbbf24'; b='#b45309'; l='#fde047'; pR='251, 191, 36'; bR='180, 83, 9'; bgTop='25, 15, 0'; bgBot='45, 20, 0'; }
             else { 
                 const existing = document.getElementById('system-theme-override');
                 if(existing) existing.remove(); 
-                return; 
+                return; // Default (Blue) falls back to the native CSS dark blue backgrounds
             }
 
             let styleEl = document.getElementById('system-theme-override');
@@ -8444,7 +8446,15 @@ factoryReset: async () => {
             styleEl.innerHTML = `
                 html.growth-mode body, html.growth-mode .splash-icon, html.growth-mode .nav-btn.active, html.growth-mode i:not([class*="text-"]), html.growth-mode .fab, html.growth-mode .system-top-btn, html.growth-mode #header-logo i, html.growth-mode .success-icon { color: ${p} !important; }
                 html.growth-mode .splash-text { -webkit-text-fill-color: ${p} !important; text-shadow: 0 0 20px ${p} !important; }
-                html.growth-mode .glass, html.growth-mode .glass-nav, html.growth-mode .modal, html.growth-mode .card, html.growth-mode .board-col, html.growth-mode .vault-content, html.growth-mode .fv-content, html.growth-mode .fv-header, html.growth-mode .fv-footer, html.growth-mode .preview-card, html.growth-mode .cal-day-box, html.growth-mode #success-popup, html.growth-mode #health-card, html.growth-mode .bento-wide, html.growth-mode .streak-row, html.growth-mode .board-card, html.growth-mode #reality-check-banner, html.growth-mode #stats-filter-banner, html.growth-mode .vault-dull-card, html.growth-mode .file-item, html.growth-mode .snap-start, html.growth-mode input, html.growth-mode select, html.growth-mode textarea, html.growth-mode #j-editor, html.growth-mode button, html.growth-mode .priority-btn { border-color: ${b} !important; }
+                
+                /* TINTED BACKGROUND INJECTIONS */
+                html.growth-mode .glass, html.growth-mode .glass-nav, html.growth-mode .modal, html.growth-mode .card, html.growth-mode .board-col, html.growth-mode .vault-content, html.growth-mode .fv-content, html.growth-mode .fv-header, html.growth-mode .fv-footer, html.growth-mode .preview-card, html.growth-mode .cal-day-box, html.growth-mode #success-popup, html.growth-mode #health-card, html.growth-mode .bento-wide, html.growth-mode .streak-row, html.growth-mode .board-card, html.growth-mode #reality-check-banner, html.growth-mode #stats-filter-banner, html.growth-mode .vault-dull-card, html.growth-mode .file-item, html.growth-mode .snap-start { border-color: ${b} !important; background: rgba(${bgTop}, 0.95) !important; }
+                html.growth-mode .glass-nav { background: rgba(${bgTop}, 0.98) !important; border-bottom: 1px solid rgba(${pR}, 0.4) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
+                html.growth-mode .dock-container { background: rgba(${bgTop}, 0.98) !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
+                html.dark .sl-window { background: linear-gradient(180deg, rgba(${bgTop}, 0.95) 0%, rgba(${bgBot}, 0.98) 100%) !important; border: 1.5px solid rgba(${pR}, 0.5) !important; box-shadow: 0 0 50px rgba(${bR}, 0.5), inset 0 0 30px rgba(${pR}, 0.15) !important; }
+                html.growth-mode .bg-white, html.growth-mode [class*="bg-slate-"], html.growth-mode [class*="bg-gray-"], html.growth-mode [class*="bg-indigo-"], html.growth-mode [class*="bg-blue-"] { border-color: ${b} !important; background-color: rgba(${bgTop}, 0.6) !important; }
+
+                /* GLOWS & ACCENTS */
                 html.growth-mode .glass, html.growth-mode .glass-nav, html.growth-mode .modal, html.growth-mode .card, html.growth-mode .board-col, html.growth-mode .vault-content, html.growth-mode .bento-wide, html.growth-mode .board-card { box-shadow: 0 0 20px rgba(${bR}, 0.3), inset 0 0 15px rgba(${bR}, 0.15) !important; }
                 html.growth-mode h1, html.growth-mode h2, html.growth-mode h3, html.growth-mode h4, html.growth-mode .text-slate-800, html.growth-mode .text-slate-700, html.growth-mode .group-title, html.growth-mode #health-card h2, html.growth-mode #health-card p, html.growth-mode .text-slate-500 { color: ${l} !important; -webkit-text-fill-color: ${l} !important; text-shadow: 0 0 10px rgba(${bR}, 0.8) !important; }
                 html.growth-mode input, html.growth-mode select, html.growth-mode textarea, html.growth-mode #j-editor, html.growth-mode button, html.growth-mode .priority-btn { background: rgba(${bR}, 0.1) !important; color: ${l} !important; box-shadow: inset 0 0 10px rgba(${bR}, 0.2) !important; }
@@ -8453,7 +8463,6 @@ factoryReset: async () => {
                 html.growth-mode .dock-btn.active { color: #fff !important; background: rgba(${bR}, 0.25) !important; box-shadow: inset 0 -3px 0 ${p}, 0 -10px 20px rgba(${bR}, 0.4) inset, 0 10px 20px rgba(0,0,0,0.5) !important; text-shadow: 0 0 12px #fff !important; }
                 html.growth-mode .dock-btn.active i { filter: drop-shadow(0 0 8px ${p}) !important; }
                 html.growth-mode .nav-btn.active { color: ${p} !important; text-shadow: 0 0 8px ${p} !important; }
-                html.growth-mode .bg-white, html.growth-mode [class*="bg-slate-"], html.growth-mode [class*="bg-gray-"], html.growth-mode [class*="bg-indigo-"], html.growth-mode [class*="bg-blue-"] { border-color: ${b} !important; }
                 html.growth-mode [class*="text-indigo-"], html.growth-mode [class*="text-blue-"] { color: ${p} !important; text-shadow: 0 0 8px rgba(${pR}, 0.5) !important; }
                 html.growth-mode #daily-progress-bar { background: ${p} !important; box-shadow: 0 0 15px ${p} !important; }
                 html.growth-mode #growth-mode-toggle + div { background-color: rgba(${bR}, 0.2) !important; border: 1px solid ${b} !important; }
@@ -8466,29 +8475,30 @@ factoryReset: async () => {
                 html.growth-mode #header-logo { border: 1px solid ${p} !important; box-shadow: 0 0 15px rgba(${bR}, 0.5) inset !important; }
                 html.growth-mode #about-modal .bg-red-50, html.growth-mode #about-modal .bg-blue-50 { border: 1px solid ${b} !important; border-left: 4px solid ${p} !important; box-shadow: 0 0 10px rgba(${bR}, 0.2) inset !important; }
                 html.growth-mode .settings-action-btn { border: 1px solid ${b} !important; background: rgba(${bR}, 0.15) !important; color: ${p} !important; text-shadow: 0 0 5px rgba(${pR},0.5) !important; }
-                .sl-overlay { background-image: radial-gradient(circle at center, rgba(${pR}, 0.05) 0%, transparent 70%); }
-                .sl-window { border: 1px solid rgba(${pR}, 0.5); box-shadow: 0 0 40px rgba(${bR}, 0.6), inset 0 0 20px rgba(${pR}, 0.2); }
+                
+                /* HUD SYSTEM OVERRIDES */
+                .sl-overlay { background-image: radial-gradient(circle at center, rgba(${pR}, 0.05) 0%, transparent 70%); background-color: rgba(${bgTop}, 0.9); }
                 .sl-window::before { border: 2px solid rgba(${pR}, 0.2); }
-                .sl-corner { border: 3px solid ${p}; box-shadow: 0 0 10px ${p}; }
+                .sl-corner { border: 3px solid ${p}; box-shadow: 0 0 15px ${p}, inset 0 0 10px ${p}; }
                 .sl-header { border-image: linear-gradient(to right, transparent, rgba(${pR}, 0.8), transparent) 1; }
                 .sl-header::before { color: ${p}; text-shadow: 0 0 10px ${p}; }
-                .sl-header-title { text-shadow: 0 0 15px rgba(${pR},1); }
-                .sl-text { text-shadow: 0 0 8px rgba(${pR}, 0.6); }
-                .sl-quest-btn { color: ${p}; text-shadow: 0 0 10px rgba(${pR}, 0.8); }
-                .sl-quest-btn:hover { text-shadow: 0 0 20px #fff; }
-                .sl-quest-btn:active { text-shadow: 0 0 5px ${p}; }
-                .sl-timer { color: ${p}; text-shadow: 0 0 20px rgba(${pR},1); }
-                .sl-btn { background: linear-gradient(180deg, rgba(${pR}, 0.1) 0%, transparent 100%); border: 1px solid ${p}; color: ${p}; box-shadow: inset 0 0 15px rgba(${pR}, 0.3); }
-                .sl-btn:active { background: rgba(${pR}, 0.4); }
-                .sl-cursor { background: ${p}; box-shadow: 0 0 10px ${p}; }
+                .sl-header-title { text-shadow: 0 0 20px rgba(${pR},1); }
+                .sl-text { text-shadow: 0 0 10px rgba(${pR}, 0.5); }
+                .sl-quest-item { border: 1px solid rgba(${pR}, 0.2) !important; border-left: 3px solid ${p} !important; }
+                .sl-quest-item:hover { background: rgba(${bR}, 0.25) !important; }
+                .sl-quest-btn { background: rgba(${pR}, 0.1); border: 1px solid ${p}; color: ${p}; text-shadow: 0 0 10px rgba(${pR}, 0.8); box-shadow: 0 0 10px rgba(${pR}, 0.3); }
+                .sl-quest-btn:hover { background: ${p}; color: #000; box-shadow: 0 0 20px ${p}; text-shadow: none; }
+                .sl-quest-btn:active { text-shadow: 0 0 5px ${p}; box-shadow: 0 0 5px ${p}; }
+                .sl-timer { color: ${p}; text-shadow: 0 0 25px rgba(${pR},1); }
+                .sl-btn { background: linear-gradient(180deg, rgba(${pR}, 0.15) 0%, rgba(${bR}, 0.4) 100%); border: 1px solid ${p}; box-shadow: 0 0 15px rgba(${pR}, 0.2), inset 0 1px 1px rgba(255,255,255,0.2); }
+                .sl-btn:hover { box-shadow: 0 0 25px rgba(${pR}, 0.5); }
+                .sl-cursor { background: ${p}; box-shadow: 0 0 15px ${p}; }
                 .pt-node { border-left: 2px solid rgba(${pR}, 0.4); }
                 .pt-node::before { background: rgba(${pR}, 0.4); }
                 .pt-title { text-shadow: 0 0 5px rgba(${pR}, 0.6); }
                 html.dark .system-top-btn { color: ${p}; }
                 html.dark .system-top-btn i { color: ${p}; }
                 html.growth-mode .system-top-btn { color: ${p} !important; text-shadow: 0 0 10px rgba(${pR}, 0.8) !important; }
-                html.growth-mode .glass-nav { border-bottom: 1px solid rgba(${pR}, 0.4) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
-                html.growth-mode .dock-container { box-shadow: 0 -10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(${bR}, 0.2) !important; }
                 html.growth-mode #top-nav-dock button i { color: ${p} !important; filter: drop-shadow(0 0 5px rgba(${pR},0.6)) !important; }
                 html.growth-mode .streak-btn, html.growth-mode #top-nav-dock .bg-orange-50 { border: 1px solid rgba(${pR}, 0.4) !important; background: rgba(${bR}, 0.15) !important; }
                 html.growth-mode #fire-streak-display { color: ${p} !important; }
