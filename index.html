@@ -7576,9 +7576,9 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 location.reload();
             },    
 
-        factoryReset: async () => {
+factoryReset: async () => {
             if(!confirm('Delete EVERYTHING? This cannot be undone.')) return;
-            app.data = []; app.files = []; app.programs = []; app.trash = []; journal.data = {}; journal.customMarkers = [];
+            app.data = []; app.files = []; app.programs = []; app.trash = []; journal.data = {}; journal.customMarkers = []; app.timeline = [];
             
             await idb.set('zenith_minimal_v1', []);
             await idb.set('zenith_files', []);
@@ -7586,6 +7586,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
             await idb.set('zenith_journal', {});
             await idb.set('zenith_custom_markers', []);
             await idb.set('zenith_trash', []);
+            await idb.set('zenith_timeline', []);
             
             localStorage.clear();
             localStorage.setItem('zenith_v7_final', 'true');
@@ -7596,8 +7597,6 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
             // CRITICAL FIX: Reload to ensure clean slate and prevent freeze
             location.reload(); 
         },
-
-
             // --- REPORT GENERATION (UPDATED WITH RANGES & LOGS) ---
             calculateDateRanges: (dates) => {
                 if (!dates || dates.length === 0) return [];
