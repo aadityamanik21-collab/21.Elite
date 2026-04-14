@@ -2160,7 +2160,7 @@ html.dark .boot-status, html.growth-mode .boot-status {
             overlay.classList.add('active');
         },
 
-                showDailyQuest: (isBoot = false) => {
+     showDailyQuest: (isBoot = false) => {
             coreSystem.resetUI();
             const overlay = document.getElementById('sl-master-overlay');
             const qBoard = document.getElementById('sl-quest-board');
@@ -2174,13 +2174,25 @@ html.dark .boot-status, html.growth-mode .boot-status {
             const todaysTasks = (app.data || []).filter(x => x && x.deadline === today);
             const questMarkers = (journal.customMarkers || []).filter(m => m.showInQuest);
             
-            if(todaysTasks.length === 0 && questMarkers.length === 0) {
+            const hasFutureNote = !!todayEntry.futureNote;
+            
+            // FLawless override: Will not skip if a Future Note is found
+            if(todaysTasks.length === 0 && questMarkers.length === 0 && !hasFutureNote) {
                 coreSystem.typewriteText("No daily objectives assigned. Rest and recover, Player.", () => {
                     document.getElementById('sl-controls').style.display = 'flex';
                 });
             } else {
                 qList.innerHTML = '';
                 
+                // 0. Render Future Note First
+                if (hasFutureNote) {
+                    qList.innerHTML += `
+                    <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; padding:10px; border-radius:8px; margin-bottom:15px; color:#fde68a; text-shadow:0 0 5px #f59e0b;">
+                        <div style="font-size:10px; font-weight:bold; margin-bottom:4px; opacity:0.8; text-transform:uppercase;"><i class="fas fa-bolt text-amber-400 mr-1"></i> MESSAGE FROM PAST SELF:</div>
+                        <div style="font-size:13px; font-family:'JetBrains Mono', monospace; line-height:1.5;">${escapeHTML(todayEntry.futureNote).replace(/\n/g, '<br>')}</div>
+                    </div>`;
+                }
+
                 // 1. Render Interactive Tasks
                 todaysTasks.forEach(t => {
                     let rawTitle = t.title || "Unknown Target";
@@ -2256,16 +2268,29 @@ html.dark .boot-status, html.growth-mode .boot-status {
                     return (val === undefined || val === null || val === ''); 
                 }).length;
 
-              const msg = (activeRemainingTasks + activeRemainingMarkers) === 0 ? "Daily Quest Cleared. Requirements met." : "Daily Quest - Execute directives to maintain peak readiness.";
-                
-                if (todayEntry && todayEntry.futureNote) {
-                    qList.innerHTML = `
-                    <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; padding:10px; border-radius:8px; margin-bottom:15px; color:#fde68a; text-shadow:0 0 5px #f59e0b;">
-                        <div style="font-size:10px; font-weight:bold; margin-bottom:4px; opacity:0.8; text-transform:uppercase;"><i class="fas fa-bolt text-amber-400 mr-1"></i> MESSAGE FROM PAST SELF:</div>
-                        <div style="font-size:13px; font-family:'JetBrains Mono', monospace; line-height:1.5;">${escapeHTML(todayEntry.futureNote)}</div>
-                    </div>` + qList.innerHTML;
-                }
+                let msg = "";
+                if (todaysTasks.length === 0 && questMarkers.length === 0 && hasFutureNote) {
+                    msg = "Temporal Note Retrieved. No active targets scheduled for today.";
+                    
+                    // Hide goals title and timer if only showing a note
+                    const goalTitle = document.querySelector('.sl-goal-title');
+                    const warningTxt = document.querySelector('.sl-warning');
+                    const timerTxt = document.querySelector('.sl-timer');
+                    if (goalTitle) goalTitle.style.display = 'none';
+                    if (warningTxt) warningTxt.style.display = 'none';
+                    if (timerTxt) timerTxt.style.display = 'none';
 
+                } else {
+                    msg = (activeRemainingTasks + activeRemainingMarkers) === 0 ? "Daily Quest Cleared. Requirements met." : "Daily Quest - Execute directives to maintain peak readiness.";
+                    
+                    const goalTitle = document.querySelector('.sl-goal-title');
+                    const warningTxt = document.querySelector('.sl-warning');
+                    const timerTxt = document.querySelector('.sl-timer');
+                    if (goalTitle) goalTitle.style.display = 'block';
+                    if (warningTxt) warningTxt.style.display = 'block';
+                    if (timerTxt) timerTxt.style.display = 'block';
+                }
+                
                 coreSystem.typewriteText(msg, () => {
                     qBoard.style.display = 'block';
                     document.getElementById('sl-controls').style.display = 'flex';
