@@ -813,8 +813,9 @@ html.dark .boot-status, html.growth-mode .boot-status {
         }
         .sl-overlay.active { opacity: 1; pointer-events: auto; }
         
-        .sl-window {
+       .sl-window {
             position: relative; width: 85%; max-width: 340px;
+            max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; /* THE FIX: Constraints the window */
             background: linear-gradient(180deg, #020b24 0%, #061e54 100%);
             border: 1px solid rgba(56, 189, 248, 0.5);
             box-shadow: 0 0 40px rgba(2, 132, 199, 0.6), inset 0 0 20px rgba(56, 189, 248, 0.2);
@@ -1212,32 +1213,34 @@ html.dark .boot-status, html.growth-mode .boot-status {
     <div id="season-overlay"></div>
     <div id="export-canvas-container"></div>
     <div id="success-popup"><div class="success-icon">🔥</div><h2 class="text-xl font-black text-slate-800">Great Job!</h2><p class="text-xs text-slate-500 font-bold uppercase mt-1">Keep the streak alive!</p></div>
-    <div id="sl-master-overlay" class="sl-overlay">
+<div id="sl-master-overlay" class="sl-overlay">
         <div class="sl-window">
             <div class="sl-corner sl-corner-tl"></div>
             <div class="sl-corner sl-corner-tr"></div>
             <div class="sl-corner sl-corner-bl"></div>
             <div class="sl-corner sl-corner-br"></div>
             
-            <div class="sl-header">
+            <div class="sl-header shrink-0">
                 <div class="sl-header-title" id="sl-title">Quest Info</div>
             </div>
             
-            <div class="sl-text" id="sl-typewriter-box"></div>
-            
-            <div id="sl-quest-board" style="display: none;">
-                <div class="sl-goal-title">Goals</div>
-                <div class="sl-quest-list" id="sl-quest-list"></div>
-                <div class="sl-warning">Caution! - If the Daily Quest remains incomplete,<br>penalties will be given accordingly.</div>
-                <div class="sl-timer" id="sl-timer-display">00:00:00</div>
+            <div class="overflow-y-auto flex-1 scroller pr-1" id="sl-scroll-wrapper">
+                <div class="sl-text" id="sl-typewriter-box"></div>
+                
+                <div id="sl-quest-board" style="display: none;">
+                    <div class="sl-goal-title">Goals</div>
+                    <div class="sl-quest-list" id="sl-quest-list"></div>
+                    <div class="sl-warning">Caution! - If the Daily Quest remains incomplete,<br>penalties will be given accordingly.</div>
+                    <div class="sl-timer" id="sl-timer-display">00:00:00</div>
+                </div>
+
+                <div id="sl-purpose-tree" style="display: none;">
+                    <div class="sl-goal-title">System Logic</div>
+                    <div class="purpose-tree" id="sl-tree-container"></div>
+                </div>
             </div>
 
-            <div id="sl-purpose-tree" style="display: none;">
-                <div class="sl-goal-title">System Logic</div>
-                <div class="purpose-tree" id="sl-tree-container"></div>
-            </div>
-
-            <div class="sl-btn-group" id="sl-controls" style="display: none;">
+            <div class="sl-btn-group shrink-0 mt-4" id="sl-controls" style="display: none;">
                 <button class="sl-btn" id="sl-btn-cancel" onclick="coreSystem.close()">Cancel</button>
                 <button class="sl-btn confirm" id="sl-btn-confirm" style="display:none;"></button>
             </div>
