@@ -5764,7 +5764,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 }
             },
 
-            renderCalendar: () => {
+renderCalendar: () => {
                 const grid = document.getElementById('cal-grid-container'); grid.innerHTML = '';
                 const today = app.getLocalISO(); 
                 
@@ -5774,43 +5774,43 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 
                 let html = '';
                 
-                        const buildBox = (dStr, dNum, dDayName, isToday, isArchived = false) => {
-            const items = [
-                ...app.data.filter(x => x.type === 'event' && x.deadline === dStr),
-                ...app.data.filter(x => {
-                    if (x.type === 'event' || x.deadline !== dStr) return false;
-                    let state = x.visibilityState || (x.showInCal === false ? 'hidden-all' : 'visible');
-                    return state !== 'hidden-all';
-                })
-            ];
+                const buildBox = (dStr, dNum, dDayName, isToday, isArchived = false) => {
+                    const items = [
+                        ...app.data.filter(x => x.type === 'event' && x.deadline === dStr),
+                        ...app.data.filter(x => {
+                            if (x.type === 'event' || x.deadline !== dStr) return false;
+                            let state = x.visibilityState || (x.showInCal === false ? 'hidden-all' : 'visible');
+                            return state !== 'hidden-all';
+                        })
+                    ];
                     
-                                let slots = '';
-            items.slice(0, 5).forEach(i => {
-                let cls = '';
-                let textDeco = '';
-                let customStyle = '';
+                    let slots = '';
+                    items.slice(0, 5).forEach(i => {
+                        let cls = '';
+                        let textDeco = '';
+                        let customStyle = '';
 
-                if (i.type === 'event') {
-                    cls = 'bg-Event';
-                } else if (i.failed) {
-                    cls = 'bg-red-800 opacity-60';
-                    textDeco = 'line-through decoration-white/50';
-                } else if (i.partial) {
-                    cls = 'bg-slate-500 opacity-60';
-                    textDeco = 'line-through decoration-white/50';
-                } else if (i.completed) {
-                    cls = 'bg-green-600 opacity-60';
-                    textDeco = 'line-through decoration-white/50';
-                } else {
-                    if (i.taskColor) {
-                        customStyle = `style="background-color: ${i.taskColor} !important; border: 1px solid rgba(255,255,255,0.2);"`;
-                    } else {
-                        cls = `bg-${i.priority}`;
-                    }
-                }
-                
-                slots += `<div class="slot ${cls} ${textDeco}" ${customStyle}>${escapeHTML(i.title)}</div>`;
-            });
+                        if (i.type === 'event') {
+                            cls = 'bg-Event';
+                        } else if (i.failed) {
+                            cls = 'bg-red-800 opacity-60';
+                            textDeco = 'line-through decoration-white/50';
+                        } else if (i.partial) {
+                            cls = 'bg-slate-500 opacity-60';
+                            textDeco = 'line-through decoration-white/50';
+                        } else if (i.completed) {
+                            cls = 'bg-green-600 opacity-60';
+                            textDeco = 'line-through decoration-white/50';
+                        } else {
+                            if (i.taskColor) {
+                                customStyle = `style="background-color: ${i.taskColor} !important; border: 1px solid rgba(255,255,255,0.2);"`;
+                            } else {
+                                cls = `bg-${i.priority}`;
+                            }
+                        }
+                        
+                        slots += `<div class="slot ${cls} ${textDeco}" ${customStyle}>${escapeHTML(i.title)}</div>`;
+                    });
                     
                     if(items.length > 5) slots += `<div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">+${items.length - 5} MORE</div>`;
                     if(items.length === 0) slots = `<div class="slot slot-empty"></div>`;
@@ -5845,6 +5845,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                         </div>
                     </div>`;
                 };
+
                 // 1. RENDER ARCHIVE MONTH (IF ACTIVE)
                 if (app.archiveMonth) {
                     const [y, m] = app.archiveMonth.split('-');
@@ -5875,7 +5876,19 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     `;
                 }
 
-                // 2. RENDER ACTIVE TIMELINE (Today -> End of Year)
+                // 2. RENDER PROCRASTINATION BACKLOG
+                const overdueTasks = app.data.filter(x => x.type !== 'event' && !x.completed && !x.failed && !x.partial && x.deadline < today);
+                if (overdueTasks.length > 0 && !app.archiveMonth) {
+                    const overdueDates = [...new Set(overdueTasks.map(x => x.deadline))].sort();
+                    html += `<div class="cal-month-header"><span class="text-red-500"><i class="fas fa-skull-crossbones mr-2"></i>PROCRASTINATION BACKLOG</span><span class="text-[10px] text-red-500 font-mono font-bold">${overdueTasks.length} PENDING</span></div>`;
+                    
+                    overdueDates.forEach(dStr => {
+                        const c = new Date(dStr + 'T00:00:00');
+                        html += buildBox(dStr, c.getDate(), c.toLocaleDateString('en-US', {weekday:'short'}), false, false);
+                    });
+                }
+
+                // 3. RENDER ACTIVE TIMELINE (Today -> End of Year)
                 let lastFutureMonth = -1;
                 let c = new Date(activeStart);
                 while(c <= activeEnd) {
@@ -5898,10 +5911,17 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     if (app.archiveMonth) {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else {
-                        const todayEl = document.getElementById('cal-box-' + today);
-                        if (todayEl) {
+                        // If there is an overdue backlog, scroll there first, otherwise scroll to today
+                        let scrollTargetId = 'cal-box-' + today;
+                        if (overdueTasks.length > 0) {
+                            const overdueDates = [...new Set(overdueTasks.map(x => x.deadline))].sort();
+                            scrollTargetId = 'cal-box-' + overdueDates[0];
+                        }
+                        
+                        const targetEl = document.getElementById(scrollTargetId);
+                        if (targetEl) {
                             const yOffset = -120;
-                            const y = todayEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                            const y = targetEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
                             window.scrollTo({top: y, behavior: 'smooth'});
                         }
                     }
@@ -6547,20 +6567,19 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 document.getElementById('preview-overlay').classList.add('active');
             },
 
-                                    openLoadAnalysis: (targetDate = null) => {
+                                   openLoadAnalysis: (targetDate = null) => {
                 const today = app.getLocalISO();
-                let activeTasks = app.getFilteredTasks().filter(x => !x.completed && !x.failed && !x.partial);
+                let scopedTasks = app.getFilteredTasks();
 
                 let isSingleDay = false;
                 let singleDayDate = today;
-                let subtitle = "Pending Execution";
+                let subtitle = "Pending & Completed Execution";
 
                 if (targetDate && typeof targetDate === 'string') {
                     isSingleDay = true;
                     singleDayDate = targetDate;
                     subtitle = `For ${targetDate}`;
-                    // Unbind from normal stats scope so they can inspect any future date freely
-                    activeTasks = app.data.filter(x => !x.completed && !x.failed && !x.partial && x.deadline === targetDate && x.type !== 'event');
+                    scopedTasks = app.data.filter(x => x.deadline === targetDate && x.type !== 'event');
                 } else if (app.statsFilter && app.statsFilter.type === 'year') {
                     subtitle = `For Year ${app.statsFilter.selectedYear}`;
                 } else if (app.statsFilter && app.statsFilter.type === 'month') {
@@ -6576,6 +6595,9 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     }
                 }
 
+                let activeTasks = scopedTasks.filter(x => !x.completed && !x.failed && !x.partial && x.type !== 'event');
+                let completedTasks = scopedTasks.filter(x => x.completed && !x.partial && x.type !== 'event');
+
                 let overdue = [], dueToday = [], upcoming = [];
 
                 if (isSingleDay) {
@@ -6586,7 +6608,7 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                     upcoming = activeTasks.filter(t => t.deadline > today).sort((a,b) => new Date(a.deadline) - new Date(b.deadline));
                 }
 
-                document.getElementById('prev-date-num').innerText = "Active Load";
+                document.getElementById('prev-date-num').innerText = "Load & History";
                 document.getElementById('prev-date-day').innerText = subtitle;
                 
                 const list = document.getElementById('preview-list');
@@ -6607,10 +6629,14 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 if (isSingleDay) {
                     html += `
                         ${datePickerHtml}
-                        <div class="grid grid-cols-1 gap-2 mb-4">
+                        <div class="grid grid-cols-2 gap-2 mb-4">
                             <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center shadow-inner">
-                                <div class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Scheduled Targets</div>
+                                <div class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Scheduled</div>
                                 <div class="text-3xl font-black text-blue-600 mt-1">${dueToday.length}</div>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded-xl border border-green-100 text-center shadow-inner">
+                                <div class="text-[9px] font-bold text-green-600 uppercase tracking-widest">Completed</div>
+                                <div class="text-3xl font-black text-green-700 mt-1">${completedTasks.length}</div>
                             </div>
                         </div>
                     `;
@@ -6625,18 +6651,22 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                 } else {
                     html += `
                         ${datePickerHtml}
-                        <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="grid grid-cols-4 gap-2 mb-4">
                             <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
                                 <div class="text-[9px] font-bold text-red-500 uppercase tracking-widest">Overdue</div>
-                                <div class="text-2xl font-black text-red-600 mt-1">${overdue.length}</div>
+                                <div class="text-xl font-black text-red-600 mt-1">${overdue.length}</div>
                             </div>
                             <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
                                 <div class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Today</div>
-                                <div class="text-2xl font-black text-blue-600 mt-1">${dueToday.length}</div>
+                                <div class="text-xl font-black text-blue-600 mt-1">${dueToday.length}</div>
                             </div>
                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
                                 <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Upcoming</div>
-                                <div class="text-2xl font-black text-slate-700 mt-1">${upcoming.length}</div>
+                                <div class="text-xl font-black text-slate-700 mt-1">${upcoming.length}</div>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded-xl border border-green-200 text-center">
+                                <div class="text-[9px] font-bold text-green-600 uppercase tracking-widest">Done</div>
+                                <div class="text-xl font-black text-green-700 mt-1">${completedTasks.length}</div>
                             </div>
                         </div>
                     `;
@@ -6652,14 +6682,23 @@ ${i.missedHistory && i.missedHistory.length > 0 ? `<button onclick="app.showMiss
                         html += `</div></div>`;
                     }
                     if (upcoming.length > 0) {
-                        html += `<div class="load-task-section"><h3 class="load-section-header font-bold text-slate-500 text-xs uppercase tracking-widest mb-2 border-b border-slate-200 pb-1"><i class="fas fa-calendar-alt mr-1"></i> Upcoming</h3><div class="space-y-2 pb-6">`;
+                        html += `<div class="load-task-section"><h3 class="load-section-header font-bold text-slate-500 text-xs uppercase tracking-widest mb-2 border-b border-slate-200 pb-1"><i class="fas fa-calendar-alt mr-1"></i> Upcoming</h3><div class="space-y-2 pb-4">`;
                         upcoming.slice(0, 100).forEach(t => { html += `<div class="load-task-item bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center"><div class="truncate pr-2"><div class="text-xs font-bold text-slate-600 truncate">${escapeHTML(t.title)}</div><div class="text-[9px] text-slate-400 font-mono mt-0.5">Due: ${t.deadline}</div></div><span class="text-[8px] font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded uppercase">${t.priority}</span></div>`; });
                         if (upcoming.length > 100) html += `<div class="text-center text-[10px] text-slate-400 font-bold mt-2">+ ${upcoming.length - 100} more tasks scheduled.</div>`;
                         html += `</div></div>`;
                     }
                 }
 
-                if (activeTasks.length === 0) {
+                if (completedTasks.length > 0) {
+                    html += `<div class="load-task-section"><h3 class="load-section-header font-bold text-green-600 text-xs uppercase tracking-widest mb-2 border-b border-green-200 pb-1"><i class="fas fa-check-double mr-1"></i> Completed</h3><div class="space-y-2 pb-6">`;
+                    completedTasks.sort((a,b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0)).slice(0, 50).forEach(t => { 
+                        html += `<div class="load-task-item bg-green-50 p-3 rounded-lg border border-green-200 shadow-sm flex justify-between items-center"><div class="truncate pr-2"><div class="text-xs font-bold text-slate-600 truncate line-through decoration-green-400">${escapeHTML(t.title)}</div><div class="text-[9px] text-slate-400 font-mono mt-0.5">Cleared: ${t.completedAt ? t.completedAt.split('T')[0] : t.deadline}</div></div><span class="text-[8px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded uppercase"><i class="fas fa-check"></i></span></div>`; 
+                    });
+                    if (completedTasks.length > 50) html += `<div class="text-center text-[10px] text-slate-400 font-bold mt-2">+ ${completedTasks.length - 50} more.</div>`;
+                    html += `</div></div>`;
+                }
+
+                if (activeTasks.length === 0 && completedTasks.length === 0) {
                     html += `<div class="text-center py-8 opacity-50"><i class="fas fa-check-circle text-4xl text-slate-300 mb-3"></i><div class="text-sm font-bold text-slate-500">Zero Load</div><div class="text-xs text-slate-400">Your queue is entirely clear for this timeframe.</div></div>`;
                 }
 
